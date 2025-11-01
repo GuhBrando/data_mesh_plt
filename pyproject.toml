@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data_mesh_plt"
+version = "0.1.0"
+description = "Projeto voltado a criar uma plataforma de Data Mesh"
+authors = [
+    {name = "Gustavo Brandao"}
+]
+dependencies = [
+    "uvicorn[standard]>=0.23.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.44.0",
+    "pre-commit>=3.4.0",
+]
+
+[tool.ruff]
+line-length = 88
+exclude = ["tests/*"]
+extend-ignore = ["E501", "W503"]
+select = ["F", "E", "W"]
+fix = true
+
+[tool.ruff.flake8]
+max-line-length = 88
+
+[tool.ruff.mypy]
+files = ["src", "tests"]
