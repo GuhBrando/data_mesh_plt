@@ -1,15 +1,8 @@
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Pin to a specific Ruff version for reproducible builds
+    rev: v0.14.3 # Replace with the desired Ruff version
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-  - repo: https://github.com/psf/black
-    rev: 22.10.0
-    hooks:
-      - id: black
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.0.1
-    hooks:
-      - id: mypy
+      - id: ruff-check # Runs the Ruff linter
+        args: [ --fix ] # Optionally add --fix to automatically fix linting issues
+      - id: ruff-format # Runs the Ruff formatter
