@@ -1,33 +1,71 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "data_mesh_plt"
 version = "0.1.0"
 description = "Projeto voltado a criar uma plataforma de Data Mesh"
+requires-python = ">=3.12"
+readme = "README.md"
+license = "MIT"
 authors = [
     {name = "Gustavo Brandao"}
 ]
 dependencies = [
+    "setuptools==80.9.0",
+    "wheel==0.45.1",
     "uvicorn[standard]>=0.23.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "ruff>=0.44.0",
+    "ruff",
     "pre-commit>=3.4.0",
+    "pip-tools>=6.15.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/foo"]
+exclude = [
+    "/.github",
+    "/docs",
 ]
 
 [tool.ruff]
 line-length = 88
 exclude = ["tests/*"]
-extend-ignore = ["E501", "W503"]
-select = ["F", "E", "W"]
 fix = true
 
-[tool.ruff.flake8]
-max-line-length = 88
-
-[tool.ruff.mypy]
-files = ["src", "tests"]
+[tool.ruff.lint]
+ignore = [
+    "D105",
+    "D107",
+    "D203",
+    "D212",
+    "UP006",
+    "UP007",
+    "D400",
+    "D406",
+    "D407",
+    "PLC1901",
+    "UP035",
+]
+select = [
+    "F",
+    "W",
+    "E",
+    "I",
+    "UP",
+    "C4",
+    "FA",
+    "ISC",
+    "ICN",
+    "RET",
+    "SIM",
+    "TID",
+    "TC",
+    "PTH",
+    "TD",
+    "NPY",
+]
