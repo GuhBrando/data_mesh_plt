@@ -1,0 +1,5 @@
+pip install uv
+uv venv
+. ./venv/Scripts/activate
+uv sync
+pre-commit install --hook-type pre-commit # First use
