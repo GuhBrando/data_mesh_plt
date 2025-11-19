@@ -3,3 +3,5 @@ uv venv
 . ./venv/Scripts/activate
 uv sync
 pre-commit install --hook-type pre-commit # First use
+
+uvicorn src.main:app --reload
