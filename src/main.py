@@ -1,5 +1,7 @@
-def main():
-    print("Hello, World!")
+from fastapi import FastAPI
 
-if __name__ == "__main__":
-    main()
+from src.interface.routers import api_router
+
+app = FastAPI()
+
+app.include_router(api_router)
