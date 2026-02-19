@@ -1,3 +1,14 @@
+# DATABASE
+cd ./database
+docker-compose up
+
+## CMD
+docker exec -it postgres_db /bin/bash
+psql -h localhost -U postgres -d data_mesh_plt
+
+
+# APP
+
 pip install uv
 uv venv
 . ./venv/Scripts/activate
