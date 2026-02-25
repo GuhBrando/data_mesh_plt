@@ -1,10 +1,10 @@
 from typing import List
 
 from src.infra.postgres import get_db_connection
-from src.interface.schemas.user import UserCreate, UserIdentity, UserUpdate
+from src.interface.schemas.user import UserCreateModel, UserIdentity, UserUpdateModel
 
 
-def create_user(user_data: UserCreate) -> UserIdentity:
+def create_user(user_data: UserCreateModel) -> UserIdentity:
     """Cria um novo usuário no banco de dados."""
     connection = get_db_connection()
     with connection.cursor() as cursor:
@@ -41,7 +41,7 @@ def list_users() -> List[UserIdentity]:
         return [UserIdentity(id=row[0], name=row[1], email=row[2]) for row in results]
 
 
-def update_user(user_id: int, user_data: UserUpdate) -> UserIdentity | None:
+def update_user(user_id: int, user_data: UserUpdateModel) -> UserIdentity | None:
     """Atualiza os dados de um usuário."""
     connection = get_db_connection()
     with connection.cursor() as cursor:

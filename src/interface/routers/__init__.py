@@ -12,7 +12,9 @@ Routes:
 from fastapi import APIRouter
 
 from src.interface.routers.data_contract import router as example_router
+from src.interface.routers.users import router as users_router
 
 api_router = APIRouter()
 
 api_router.include_router(example_router, prefix="/api/v1", tags=["Example"])
+api_router.include_router(users_router, prefix="/api/v1", tags=["Users"])

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class UserCreateModel(BaseModel):
     """
     Represents the data required to create a new user.
@@ -9,6 +10,7 @@ class UserCreateModel(BaseModel):
         email (str): The email address of the user.
         password (str): The password for the user account.
     """
+
     username: str
     email: str
     password: str
@@ -23,9 +25,25 @@ class UserResponseModel(BaseModel):
         username (str): The username of the user.
         email (str): The email address of the user.
     """
+
     id: int
     username: str
     email: str
+
+
+class UserUpdateModel(BaseModel):
+    """
+    Represents the data required to update an existing user.
+
+    Attributes:
+        username (str, optional): The new username of the user.
+        email (str, optional): The new email address of the user.
+        password (str, optional): The new password for the user account.
+    """
+
+    username: str | None = None
+    email: str | None = None
+    password: str | None = None
 
 
 class UserIdentity(BaseModel):
@@ -37,6 +55,7 @@ class UserIdentity(BaseModel):
         name (str): The name of the user.
         email (str): The email address of the user.
     """
+
     id: int
     name: str
     email: str
