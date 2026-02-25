@@ -1,6 +1,4 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-
 
 from src.interface.schemas.user import UserCreateModel, UserResponseModel
 from src.use_cases.user_interactor import CreateUserInteractor

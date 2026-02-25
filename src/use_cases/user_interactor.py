@@ -1,4 +1,5 @@
-from src.domain.user_persistence import User, create_user
+from src.domain.user_persistence import create_user
+from src.interface.schemas.user import UserCreateModel
 
 
 class CreateUserInteractor:
@@ -7,5 +8,5 @@ class CreateUserInteractor:
 
     def execute(self):
         return create_user(
-            User(name=self.username, email=f"{self.username}@example.com")
+            UserCreateModel(name=self.username, email=f"{self.username}@example.com")
         )
