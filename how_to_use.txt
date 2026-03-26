@@ -2,6 +2,23 @@
 cd ./database
 docker-compose up
 
+# Atlas
+docker pull arigaio/atlas
+
+### Atualizar hash do migration
+cd database
+docker run --rm `
+   -v ${PWD}/migrations:/migrations `
+   arigaio/atlas migrate hash `
+   --dir "file:///migrations"
+
+docker run --rm --network local-network `
+   -v ${PWD}:/project `
+   -w /project `
+   --env-file ../.env `
+   arigaio/atlas migrate apply `
+   --env local
+
 ## CMD
 docker exec -it postgres_db /bin/bash
 psql -h localhost -U postgres -d data_mesh_plt
