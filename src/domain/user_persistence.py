@@ -1,70 +1,72 @@
 from typing import List
 
-from src.infra.postgres import get_db_connection
-from src.interface.schemas.user import UserCreateModel, UserIdentity, UserUpdateModel
+from src.domain.entities.user import User
+from src.domain.value_objects.email import Email
+from src.interface.schemas.user import UserCreateModel, UserUpdateModel
 
 
-def create_user(user_data: UserCreateModel) -> UserIdentity:
-    """Cria um novo usuário no banco de dados."""
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            INSERT INTO users (name, email)
-            VALUES (%s, %s)
-            RETURNING id, name, email;
-            """,
-            (user_data.name, user_data.email),
+class UserRepository:
+    """
+    Repository for managing user entities.
+    """
+
+    def __init__(self, db_connection):
+        self.db_connection = db_connection
+
+    async def create_user(self, user_data: UserCreateModel) -> User:
+        """Creates a new user in the database."""
+        async with self.db_connection.transaction():
+            result = await self.db_connection.fetchrow(
+                """
+                INSERT INTO users (username, email)
+                VALUES ($1, $2)
+                RETURNING id, name, email;
+                """,
+                user_data.username,
+                user_data.email,
+            )
+            return User(
+                id=result["id"], name=result["name"], email=Email(result["email"])
+            )
+
+    async def get_user_by_id(self, user_id: int) -> User | None:
+        """Fetches a user by ID."""
+        result = await self.db_connection.fetchrow(
+            "SELECT id, name, email FROM users WHERE id = $1;",
+            user_id,
         )
-        result = cursor.fetchone()
-        connection.commit()
-        return UserIdentity(id=result[0], name=result[1], email=result[2])
-
-
-def get_user_by_id(user_id: int) -> UserIdentity | None:
-    """Obtém um usuário pelo ID."""
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT id, name, email FROM users WHERE id = %s;", (user_id,))
-        result = cursor.fetchone()
         if result:
-            return UserIdentity(id=result[0], name=result[1], email=result[2])
+            return User(
+                id=result["id"], name=result["name"], email=Email(result["email"])
+            )
         return None
 
+    async def list_users(self) -> List[User]:
+        """Lists all users."""
+        results = await self.db_connection.fetch("SELECT id, name, email FROM users;")
+        return [
+            User(id=row["id"], name=row["name"], email=Email(row["email"]))
+            for row in results
+        ]
 
-def list_users() -> List[UserIdentity]:
-    """Lista todos os usuários."""
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT id, name, email FROM users;")
-        results = cursor.fetchall()
-        return [UserIdentity(id=row[0], name=row[1], email=row[2]) for row in results]
-
-
-def update_user(user_id: int, user_data: UserUpdateModel) -> UserIdentity | None:
-    """Atualiza os dados de um usuário."""
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            UPDATE users
-            SET name = %s, email = %s
-            WHERE id = %s
-            RETURNING id, name, email;
-            """,
-            (user_data.name, user_data.email, user_id),
-        )
-        result = cursor.fetchone()
-        connection.commit()
-        if result:
-            return UserIdentity(id=result[0], name=result[1], email=result[2])
-        return None
-
-
-def delete_user(user_id: int) -> bool:
-    """Exclui um usuário pelo ID."""
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        cursor.execute("DELETE FROM users WHERE id = %s;", (user_id,))
-        connection.commit()
-        return cursor.rowcount > 0
+    async def update_user(
+        self, user_id: int, user_data: UserUpdateModel
+    ) -> User | None:
+        """Updates user data."""
+        async with self.db_connection.transaction():
+            result = await self.db_connection.fetchrow(
+                """
+                UPDATE users
+                SET name = $1, email = $2
+                WHERE id = $3
+                RETURNING id, name, email;
+                """,
+                user_data.name,
+                user_data.email,
+                user_id,
+            )
+            if result:
+                return User(
+                    id=result["id"], name=result["name"], email=Email(result["email"])
+                )
+            return None
