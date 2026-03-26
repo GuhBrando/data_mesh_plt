@@ -14,7 +14,7 @@ variable "readonly_password" {
   default = getenv("USER_PASSWORD")
 }
 
-# 2. O PULO DO GATO: Transforma a pasta migrations em um Template
+# 2. Transforma a pasta migrations em um Template
 data "template_dir" "migrations" {
   path = "migrations"
   vars = {
@@ -29,7 +29,6 @@ env "local" {
   url = "postgres://postgres:${getenv("POSTGRES_PASSWORD")}@postgres_db:5432/data_mesh_plt?sslmode=disable"
   
   migration {
-    # Aqui dizemos para o Atlas usar a pasta "traduzida" pelo template_dir
     dir = data.template_dir.migrations.url
   }
 }
