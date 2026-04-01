@@ -27,8 +27,10 @@ data "template_dir" "migrations" {
 # 3. Configuração do ambiente
 env "local" {
   url = "postgres://postgres:${getenv("POSTGRES_PASSWORD")}@postgres_db:5432/data_mesh_plt?sslmode=disable"
-  
+
   migration {
     dir = data.template_dir.migrations.url
   }
+
+  src = "file://schema"
 }
