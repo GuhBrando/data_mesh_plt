@@ -1,14 +1,21 @@
 import asyncpg
 
+from src.infra.config import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
+
 
 async def get_db_connection():
     """
-    Establishes and returns a connection to the PostgreSQL database using asyncpg.
+    FastAPI dependency that yields a database connection
+    and closes it after the request.
     """
-    return await asyncpg.connect(
-        user="admin",
-        password="admin_password",
-        database="data_mesh_plt",
-        host="localhost",
-        port=5432,
+    conn = await asyncpg.connect(
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        host=DB_HOST,
+        port=DB_PORT,
     )
+    try:
+        yield conn
+    finally:
+        await conn.close()
