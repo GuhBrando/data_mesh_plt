@@ -1,0 +1,140 @@
+from fastapi import Depends
+
+from src.infra.postgres import get_db_connection
+from src.infra.repositories.data_contract_repository import (
+    PostgresDataContractRepository,
+)
+from src.infra.repositories.data_product_repository import PostgresDataProductRepository
+from src.infra.repositories.user_repository import PostgresUserRepository
+from src.use_cases.data_contract.create import CreateDataContractUseCase
+from src.use_cases.data_contract.delete import DeleteDataContractUseCase
+from src.use_cases.data_contract.get import GetDataContractUseCase
+from src.use_cases.data_contract.list import ListDataContractsUseCase
+from src.use_cases.data_contract.update import UpdateDataContractUseCase
+from src.use_cases.data_product.create import CreateDataProductUseCase
+from src.use_cases.data_product.delete import DeleteDataProductUseCase
+from src.use_cases.data_product.get import GetDataProductUseCase
+from src.use_cases.data_product.list import ListDataProductsUseCase
+from src.use_cases.data_product.update import UpdateDataProductUseCase
+from src.use_cases.user.create import CreateUserUseCase
+from src.use_cases.user.delete import DeleteUserUseCase
+from src.use_cases.user.get import GetUserUseCase
+from src.use_cases.user.list import ListUsersUseCase
+from src.use_cases.user.update import UpdateUserUseCase
+
+# --- Repositories ---
+
+
+def get_user_repository(db=Depends(get_db_connection)) -> PostgresUserRepository:
+    return PostgresUserRepository(db)
+
+
+def get_data_contract_repository(
+    db=Depends(get_db_connection),
+) -> PostgresDataContractRepository:
+    return PostgresDataContractRepository(db)
+
+
+def get_data_product_repository(
+    db=Depends(get_db_connection),
+) -> PostgresDataProductRepository:
+    return PostgresDataProductRepository(db)
+
+
+# --- User use cases ---
+
+
+def get_create_user_use_case(
+    repo=Depends(get_user_repository),
+) -> CreateUserUseCase:
+    return CreateUserUseCase(repo)
+
+
+def get_get_user_use_case(
+    repo=Depends(get_user_repository),
+) -> GetUserUseCase:
+    return GetUserUseCase(repo)
+
+
+def get_list_users_use_case(
+    repo=Depends(get_user_repository),
+) -> ListUsersUseCase:
+    return ListUsersUseCase(repo)
+
+
+def get_update_user_use_case(
+    repo=Depends(get_user_repository),
+) -> UpdateUserUseCase:
+    return UpdateUserUseCase(repo)
+
+
+def get_delete_user_use_case(
+    repo=Depends(get_user_repository),
+) -> DeleteUserUseCase:
+    return DeleteUserUseCase(repo)
+
+
+# --- Data Contract use cases ---
+
+
+def get_create_data_contract_use_case(
+    repo=Depends(get_data_contract_repository),
+) -> CreateDataContractUseCase:
+    return CreateDataContractUseCase(repo)
+
+
+def get_get_data_contract_use_case(
+    repo=Depends(get_data_contract_repository),
+) -> GetDataContractUseCase:
+    return GetDataContractUseCase(repo)
+
+
+def get_list_data_contracts_use_case(
+    repo=Depends(get_data_contract_repository),
+) -> ListDataContractsUseCase:
+    return ListDataContractsUseCase(repo)
+
+
+def get_update_data_contract_use_case(
+    repo=Depends(get_data_contract_repository),
+) -> UpdateDataContractUseCase:
+    return UpdateDataContractUseCase(repo)
+
+
+def get_delete_data_contract_use_case(
+    repo=Depends(get_data_contract_repository),
+) -> DeleteDataContractUseCase:
+    return DeleteDataContractUseCase(repo)
+
+
+# --- Data Product use cases ---
+
+
+def get_create_data_product_use_case(
+    repo=Depends(get_data_product_repository),
+) -> CreateDataProductUseCase:
+    return CreateDataProductUseCase(repo)
+
+
+def get_get_data_product_use_case(
+    repo=Depends(get_data_product_repository),
+) -> GetDataProductUseCase:
+    return GetDataProductUseCase(repo)
+
+
+def get_list_data_products_use_case(
+    repo=Depends(get_data_product_repository),
+) -> ListDataProductsUseCase:
+    return ListDataProductsUseCase(repo)
+
+
+def get_update_data_product_use_case(
+    repo=Depends(get_data_product_repository),
+) -> UpdateDataProductUseCase:
+    return UpdateDataProductUseCase(repo)
+
+
+def get_delete_data_product_use_case(
+    repo=Depends(get_data_product_repository),
+) -> DeleteDataProductUseCase:
+    return DeleteDataProductUseCase(repo)

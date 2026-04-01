@@ -1,3 +1,5 @@
+import uuid
+
 from src.domain.value_objects.email import Email
 
 
@@ -6,7 +8,7 @@ class User:
     Entity representing a user.
     """
 
-    def __init__(self, id: int, name: str, email: Email):
+    def __init__(self, id: uuid.UUID, name: str, email: Email):
         self.id = id
         self.name = name
         self.email = email
