@@ -15,7 +15,7 @@ class UserCreateModel(BaseModel):
 
     username: str
     email: str
-    password: str
+    password: str | None = None
 
 
 class UserResponseModel(BaseModel):
