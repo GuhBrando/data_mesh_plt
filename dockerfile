@@ -1,9 +1,12 @@
 FROM python:3.12
 
 WORKDIR /app
-COPY requirements.txt .
 
-RUN pip install -r requirements.txt
+RUN pip install uv
+
+COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --no-dev
+
 COPY . .
 
-CMD ["python", "main.py"]
+CMD ["uv", "run", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

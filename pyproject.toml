@@ -29,7 +29,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/foo"]
+packages = ["backend"]
 exclude = [
     "/.github",
     "/docs",
