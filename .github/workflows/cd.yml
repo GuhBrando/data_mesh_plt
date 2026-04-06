@@ -5,6 +5,13 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   AZURE_RESOURCE_GROUP: dmplt-rg
   ACR_LOGIN_SERVER: dmpltacr.azurecr.io
@@ -45,6 +52,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build frontend
+        working-directory: frontend
+        run: npm ci && npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -53,8 +66,7 @@ jobs:
           action: upload
           app_location: frontend
           output_location: dist
-        env:
-          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          skip_app_build: true
 
   deploy-backend:
     name: Deploy Backend
@@ -67,8 +79,10 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Update Container App with new image
+        env:
+          IMAGE_TAG: ${{ github.ref_name }}
         run: |
           az containerapp update \
-            --name ${{ env.BACKEND_APP_NAME }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --image ${{ env.ACR_LOGIN_SERVER }}/backend:${{ github.ref_name }}
+            --name "$BACKEND_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --image "$ACR_LOGIN_SERVER/backend:$IMAGE_TAG"
