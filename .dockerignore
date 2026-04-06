@@ -1,0 +1,15 @@
+.env
+.venv
+.git
+.github
+.ruff_cache
+.pre-commit-config.yaml
+frontend/
+database/data/
+docs/
+tests/
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+uv.lock
