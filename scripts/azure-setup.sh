@@ -16,7 +16,7 @@ set -e
 : "${USER_PASSWORD:?Must export USER_PASSWORD}"
 
 RESOURCE_GROUP="dmplt-rg"
-LOCATION="brazilsouth"
+LOCATION="westus2"
 ACR_NAME="dmpltacr"
 CAE_NAME="dmplt-cae"
 BACKEND_APP="dmplt-ca-backend"
@@ -119,7 +119,7 @@ echo ""
 echo "Secret: AZURE_STATIC_WEB_APPS_API_TOKEN"
 az staticwebapp secrets list -n "$STATIC_APP" --query properties.apiKey -o tsv
 echo ""
-echo "Secret: VITE_BACKEND_URL (backend public URL):"
+echo "Secret: VITE_API_URL (backend public URL):"
 BACKEND_FQDN=$(az containerapp show \
   -n "$BACKEND_APP" -g "$RESOURCE_GROUP" \
   --query properties.configuration.ingress.fqdn -o tsv)
