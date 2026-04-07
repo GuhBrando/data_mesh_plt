@@ -1,11 +1,13 @@
 import unittest
-from backend.main import your_function  # Replace with the actual function or class you want to test
+from backend.main import app
+
 
 class TestMain(unittest.TestCase):
 
-    def test_your_function(self):
-        # Replace with actual test cases
-        self.assertEqual(your_function(args), expected_result)
+    def test_app_is_fastapi(self):
+        from fastapi import FastAPI
+        self.assertIsInstance(app, FastAPI)
+
 
 if __name__ == '__main__':
     unittest.main()
