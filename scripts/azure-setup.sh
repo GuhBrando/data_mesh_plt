@@ -24,6 +24,11 @@ POSTGRES_APP="dmplt-ca-postgres"
 STATIC_APP="dmplt-stapp-frontend"
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 
+echo "=== [0/7] Registering required resource providers ==="
+az provider register --namespace Microsoft.Web --wait
+az provider register --namespace Microsoft.App --wait
+az provider register --namespace Microsoft.ContainerRegistry --wait
+
 echo "=== [1/7] Creating Resource Group ==="
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
 
