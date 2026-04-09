@@ -99,3 +99,13 @@ jobs:
               "DB_USER=${{ secrets.DB_USER }}" \
               "DB_NAME=${{ secrets.DB_NAME }}" \
               "ADMIN_PASSWORD=secretref:admin-password"
+
+      - name: Configure CORS
+        run: |
+          az containerapp ingress cors update \
+            --name "$BACKEND_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --allowed-origins "${{ secrets.CORS_ORIGINS }}" \
+            --allowed-methods "*" \
+            --allowed-headers "*" \
+            --allow-credentials true
