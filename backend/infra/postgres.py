@@ -14,7 +14,7 @@ async def get_db_connection():
         database=DB_NAME,
         host=DB_HOST,
         port=DB_PORT,
-        ssl="require",
+        ssl="disable",
     )
     try:
         yield conn
