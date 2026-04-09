@@ -26,6 +26,7 @@ services:
     env_file: .env
     environment:
       DB_HOST: db
+      CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173"
     ports:
       - "8000:8000"
     depends_on:
