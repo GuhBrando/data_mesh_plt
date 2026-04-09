@@ -106,3 +106,13 @@ jobs:
               "ADMIN_PASSWORD=secretref:admin-password" \
               "APP_USER_PASSWORD=secretref:app-user-password" \
               "USER_PASSWORD=secretref:user-password"
+
+      - name: Configure CORS
+        run: |
+          az containerapp ingress cors update \
+            --name "$BACKEND_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --allowed-origins "${{ secrets.CORS_ORIGINS }}" \
+            --allowed-methods "*" \
+            --allowed-headers "*" \
+            --allow-credentials true
