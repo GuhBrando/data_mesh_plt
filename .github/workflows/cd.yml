@@ -83,7 +83,11 @@ jobs:
           az containerapp secret set \
             --name "$BACKEND_APP_NAME" \
             --resource-group "$AZURE_RESOURCE_GROUP" \
-            --secrets "admin-password=${{ secrets.ADMIN_PASSWORD }}"
+            --secrets \
+              "postgres-password=${{ secrets.POSTGRES_PASSWORD }}" \
+              "admin-password=${{ secrets.ADMIN_PASSWORD }}" \
+              "app-user-password=${{ secrets.APP_USER_PASSWORD }}" \
+              "user-password=${{ secrets.USER_PASSWORD }}"
 
       - name: Update Container App with new image
         env:
@@ -98,4 +102,7 @@ jobs:
               "DB_HOST=${{ secrets.DB_HOST }}" \
               "DB_USER=${{ secrets.DB_USER }}" \
               "DB_NAME=${{ secrets.DB_NAME }}" \
-              "ADMIN_PASSWORD=secretref:admin-password"
+              "POSTGRES_PASSWORD=secretref:postgres-password" \
+              "ADMIN_PASSWORD=secretref:admin-password" \
+              "APP_USER_PASSWORD=secretref:app-user-password" \
+              "USER_PASSWORD=secretref:user-password"
