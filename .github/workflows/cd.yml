@@ -78,6 +78,13 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Set Container App secrets
+        run: |
+          az containerapp secret set \
+            --name "$BACKEND_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --secrets "admin-password=${{ secrets.ADMIN_PASSWORD }}"
+
       - name: Update Container App with new image
         env:
           IMAGE_TAG: ${{ github.ref_name }}
@@ -85,4 +92,10 @@ jobs:
           az containerapp update \
             --name "$BACKEND_APP_NAME" \
             --resource-group "$AZURE_RESOURCE_GROUP" \
-            --image "$ACR_LOGIN_SERVER/backend:$IMAGE_TAG"
+            --image "$ACR_LOGIN_SERVER/backend:$IMAGE_TAG" \
+            --set-env-vars \
+              "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" \
+              "DB_HOST=${{ secrets.DB_HOST }}" \
+              "DB_USER=${{ secrets.DB_USER }}" \
+              "DB_NAME=${{ secrets.DB_NAME }}" \
+              "ADMIN_PASSWORD=secretref:admin-password"
