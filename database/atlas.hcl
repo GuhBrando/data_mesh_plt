@@ -34,3 +34,11 @@ env "local" {
 
   src = "file://schema"
 }
+
+env "azure" {
+  url = "postgres://admin:${getenv("POSTGRES_PASSWORD")}@${getenv("DB_HOST")}:${getenv("DB_PORT")}/${getenv("DB_NAME")}?sslmode=disable"
+
+  migration {
+    dir = data.template_dir.migrations.url
+  }
+}

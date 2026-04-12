@@ -16,6 +16,11 @@ env:
   AZURE_RESOURCE_GROUP: dmplt-rg
   ACR_LOGIN_SERVER: dmpltacr.azurecr.io
   BACKEND_APP_NAME: dmplt-ca-backend
+  POSTGRES_APP_NAME: dmplt-ca-postgres
+  DB_HOST: dmplt-ca-postgres
+  DB_USER: admin
+  DB_NAME: data_mesh_plt
+  DB_PORT: "5432"
 
 jobs:
   build-and-push-backend:
@@ -99,9 +104,10 @@ jobs:
             --image "$ACR_LOGIN_SERVER/backend:$IMAGE_TAG" \
             --set-env-vars \
               "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" \
-              "DB_HOST=${{ secrets.DB_HOST }}" \
-              "DB_USER=${{ secrets.DB_USER }}" \
-              "DB_NAME=${{ secrets.DB_NAME }}" \
+              "DB_HOST=${{ env.DB_HOST }}" \
+              "DB_PORT=${{ env.DB_PORT }}" \
+              "DB_USER=${{ env.DB_USER }}" \
+              "DB_NAME=${{ env.DB_NAME }}" \
               "POSTGRES_PASSWORD=secretref:postgres-password" \
               "ADMIN_PASSWORD=secretref:admin-password" \
               "APP_USER_PASSWORD=secretref:app-user-password" \
