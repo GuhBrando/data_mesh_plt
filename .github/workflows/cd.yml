@@ -17,7 +17,8 @@ env:
   ACR_LOGIN_SERVER: dmpltacr.azurecr.io
   BACKEND_APP_NAME: dmplt-ca-backend
   POSTGRES_APP_NAME: dmplt-ca-postgres
-  DB_HOST: dmplt-ca-postgres
+  CAE_DOMAIN: jollyfield-6ed7e557.westus2.azurecontainerapps.io
+  DB_HOST: dmplt-ca-postgres.internal.jollyfield-6ed7e557.westus2.azurecontainerapps.io
   DB_USER: admin
   DB_NAME: data_mesh_plt
   DB_PORT: "5432"
