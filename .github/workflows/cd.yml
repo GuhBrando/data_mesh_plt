@@ -21,7 +21,7 @@ env:
   DB_HOST: dmplt-ca-postgres.internal.jollyfield-6ed7e557.westus2.azurecontainerapps.io
   DB_USER: admin
   DB_NAME: data_mesh_plt
-  DB_PORT: "5432"
+  DB_PORT: "80"
 
 jobs:
   build-and-push-backend:
