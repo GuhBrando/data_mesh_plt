@@ -36,7 +36,7 @@ env "local" {
 }
 
 env "azure" {
-  url = "postgres://admin:${getenv("POSTGRES_PASSWORD")}@${getenv("DB_HOST")}:${getenv("DB_PORT")}/data_mesh_plt?sslmode=disable"
+  url = "postgres://${getenv("DB_USER")}:${getenv("POSTGRES_PASSWORD")}@${getenv("DB_HOST")}:${getenv("DB_PORT")}/${getenv("DB_NAME")}?sslmode=require&channel_binding=require"
 
   migration {
     dir = data.template_dir.migrations.url
