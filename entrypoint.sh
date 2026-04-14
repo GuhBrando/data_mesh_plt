@@ -6,12 +6,15 @@ if [ -z "$DB_HOST" ]; then
   exit 1
 fi
 
-echo "Running migrations against $DB_HOST..."
+ATLAS_HOST="${MIGRATIONS_DB_HOST:-$DB_HOST}"
+ATLAS_URL="postgres://${DB_USER}:${POSTGRES_PASSWORD}@${ATLAS_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
+
+echo "Running migrations against $ATLAS_HOST..."
 cd /app/database
-if atlas migrate apply --env azure; then
+if atlas migrate apply --env azure --url "$ATLAS_URL"; then
   echo "Migrations applied successfully"
 else
-  echo "WARNING: Migrations failed - check DB_HOST=$DB_HOST is reachable on port 5432"
+  echo "WARNING: Migrations failed - check $ATLAS_HOST is reachable on port $DB_PORT"
 fi
 
 cd /app
