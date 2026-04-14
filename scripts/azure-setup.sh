@@ -6,13 +6,15 @@ set -e
 #   2. Export these variables before running:
 #
 #   export POSTGRES_PASSWORD="<neon password>"   # from Neon dashboard
-#   export NEON_HOST="<neon host>"               # e.g. ep-xxx.us-west-2.aws.neon.tech
+#   export NEON_HOST="<neon pooler host>"         # e.g. ep-xxx-pooler.us-west-2.aws.neon.tech
+#   export NEON_DIRECT_HOST="<neon direct host>"  # e.g. ep-xxx.us-west-2.aws.neon.tech (no -pooler)
 #   export ADMIN_PASSWORD="<strong password>"
 #   export APP_USER_PASSWORD="<strong password>"
 #   export USER_PASSWORD="<strong password>"
 
 : "${POSTGRES_PASSWORD:?Must export POSTGRES_PASSWORD}"
 : "${NEON_HOST:?Must export NEON_HOST}"
+: "${NEON_DIRECT_HOST:?Must export NEON_DIRECT_HOST}"
 : "${ADMIN_PASSWORD:?Must export ADMIN_PASSWORD}"
 : "${APP_USER_PASSWORD:?Must export APP_USER_PASSWORD}"
 : "${USER_PASSWORD:?Must export USER_PASSWORD}"
@@ -64,6 +66,7 @@ az containerapp create \
   --registry-password "$ACR_PASSWORD" \
   --env-vars \
     DB_HOST="$NEON_HOST" \
+    MIGRATIONS_DB_HOST="$NEON_DIRECT_HOST" \
     DB_PORT=5432 \
     DB_NAME=data_mesh_plt \
     DB_USER=admin \
