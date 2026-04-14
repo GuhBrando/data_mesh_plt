@@ -7,7 +7,7 @@ if [ -z "$DB_HOST" ]; then
 fi
 
 ATLAS_HOST="${MIGRATIONS_DB_HOST:-$DB_HOST}"
-ATLAS_URL="postgres://${DB_USER}:${POSTGRES_PASSWORD}@${ATLAS_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
+ATLAS_URL="postgres://${DB_USER}:${ADMIN_PASSWORD}@${ATLAS_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
 
 echo "Running migrations against $ATLAS_HOST..."
 cd /app/database
