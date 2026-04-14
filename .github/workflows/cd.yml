@@ -20,6 +20,7 @@ env:
   DB_HOST: ${{ secrets.DB_HOST }}
   DB_USER: admin
   DB_NAME: data_mesh_plt
+  MIGRATIONS_DB_HOST: ep-divine-wind-aksyjv4m.c-3.us-west-2.aws.neon.tech
   DB_PORT: "5432"
 
 jobs:
