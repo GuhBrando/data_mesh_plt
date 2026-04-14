@@ -11,7 +11,7 @@ ATLAS_URL="postgres://${DB_USER}:${ADMIN_PASSWORD}@${ATLAS_HOST}:${DB_PORT}/${DB
 
 echo "Running migrations against $ATLAS_HOST..."
 cd /app/database
-if atlas migrate apply --env azure --url "$ATLAS_URL"; then
+if atlas migrate apply --env azure --url "$ATLAS_URL" --revisions-schema public; then
   echo "Migrations applied successfully"
 else
   echo "WARNING: Migrations failed - check $ATLAS_HOST is reachable on port $DB_PORT"

@@ -39,6 +39,7 @@ env "azure" {
   url = "postgres://${getenv("DB_USER")}:${getenv("POSTGRES_PASSWORD")}@${getenv("MIGRATIONS_DB_HOST")}:${getenv("DB_PORT")}/${getenv("DB_NAME")}?sslmode=require"
 
   migration {
-    dir = data.template_dir.migrations.url
+    dir             = data.template_dir.migrations.url
+    revisions_schema = "public"
   }
 }

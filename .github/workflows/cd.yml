@@ -109,6 +109,7 @@ jobs:
               "DB_PORT=${{ env.DB_PORT }}" \
               "DB_USER=${{ env.DB_USER }}" \
               "DB_NAME=${{ env.DB_NAME }}" \
+              "MIGRATIONS_DB_HOST=${{ env.MIGRATIONS_DB_HOST }}" \
               "POSTGRES_PASSWORD=secretref:postgres-password" \
               "ADMIN_PASSWORD=secretref:admin-password" \
               "APP_USER_PASSWORD=secretref:app-user-password" \
