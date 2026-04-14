@@ -5,12 +5,14 @@ set -e
 #   1. Azure CLI installed and logged in (az login)
 #   2. Export these variables before running:
 #
-#   export POSTGRES_PASSWORD="<strong password>"
+#   export POSTGRES_PASSWORD="<neon password>"   # from Neon dashboard
+#   export NEON_HOST="<neon host>"               # e.g. ep-xxx.us-west-2.aws.neon.tech
 #   export ADMIN_PASSWORD="<strong password>"
 #   export APP_USER_PASSWORD="<strong password>"
 #   export USER_PASSWORD="<strong password>"
 
 : "${POSTGRES_PASSWORD:?Must export POSTGRES_PASSWORD}"
+: "${NEON_HOST:?Must export NEON_HOST}"
 : "${ADMIN_PASSWORD:?Must export ADMIN_PASSWORD}"
 : "${APP_USER_PASSWORD:?Must export APP_USER_PASSWORD}"
 : "${USER_PASSWORD:?Must export USER_PASSWORD}"
@@ -20,7 +22,6 @@ LOCATION="westus2"
 ACR_NAME="dmpltacr"
 CAE_NAME="dmplt-cae"
 BACKEND_APP="dmplt-ca-backend"
-POSTGRES_APP="dmplt-ca-postgres"
 STATIC_APP="dmplt-stapp-frontend"
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 
@@ -45,24 +46,7 @@ az containerapp env create \
   --resource-group "$RESOURCE_GROUP" \
   --location "$LOCATION"
 
-echo "=== [4/7] Creating PostgreSQL Container App ==="
-az containerapp create \
-  --name "$POSTGRES_APP" \
-  --resource-group "$RESOURCE_GROUP" \
-  --environment "$CAE_NAME" \
-  --image postgres:16.1 \
-  --ingress internal \
-  --target-port 5432 \
-  --transport tcp \
-  --min-replicas 1 \
-  --max-replicas 1 \
-  --env-vars \
-    POSTGRES_DB=data_mesh_plt \
-    POSTGRES_USER=admin \
-    "POSTGRES_PASSWORD=secretref:postgres-password" \
-  --secrets "postgres-password=$POSTGRES_PASSWORD"
-
-echo "=== [5/7] Creating Backend Container App ==="
+echo "=== [4/6] Creating Backend Container App ==="
 ACR_USERNAME=$(az acr credential show -n "$ACR_NAME" --query username -o tsv)
 ACR_PASSWORD=$(az acr credential show -n "$ACR_NAME" --query "passwords[0].value" -o tsv)
 
@@ -79,7 +63,7 @@ az containerapp create \
   --registry-username "$ACR_USERNAME" \
   --registry-password "$ACR_PASSWORD" \
   --env-vars \
-    DB_HOST="$POSTGRES_APP" \
+    DB_HOST="$NEON_HOST" \
     DB_PORT=5432 \
     DB_NAME=data_mesh_plt \
     DB_USER=admin \
@@ -93,13 +77,13 @@ az containerapp create \
     "app-user-password=$APP_USER_PASSWORD" \
     "user-password=$USER_PASSWORD"
 
-echo "=== [6/7] Creating Static Web App ==="
+echo "=== [5/6] Creating Static Web App ==="
 az staticwebapp create \
   --name "$STATIC_APP" \
   --resource-group "$RESOURCE_GROUP" \
   --location "$LOCATION"
 
-echo "=== [7/7] Creating Service Principal for GitHub Actions ==="
+echo "=== [6/6] Creating Service Principal for GitHub Actions ==="
 az ad sp create-for-rbac \
   --name "sp-dmplt-github-actions" \
   --role contributor \
@@ -130,7 +114,13 @@ BACKEND_FQDN=$(az containerapp show \
   --query properties.configuration.ingress.fqdn -o tsv)
 echo "https://$BACKEND_FQDN"
 echo ""
-echo "Secrets: POSTGRES_PASSWORD, ADMIN_PASSWORD, APP_USER_PASSWORD, USER_PASSWORD"
+echo "Secret: DB_HOST"
+echo "  Value: $NEON_HOST  (from Neon dashboard)"
+echo ""
+echo "Secret: POSTGRES_PASSWORD"
+echo "  Value: your Neon password  (from Neon dashboard)"
+echo ""
+echo "Secrets: ADMIN_PASSWORD, APP_USER_PASSWORD, USER_PASSWORD"
 echo "  Values: the same passwords you exported before running this script"
 echo ""
 echo "Secret: CORS_ORIGINS"
