@@ -34,7 +34,6 @@ def _to_response(user: User) -> UserResponseModel:
 async def create_user(
     body: UserCreateModel,
     use_case: CreateUserUseCase = Depends(get_create_user_use_case),
-    _: User = Depends(get_current_user),
 ):
     try:
         user = await use_case.execute(
