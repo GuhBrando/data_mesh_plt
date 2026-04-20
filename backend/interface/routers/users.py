@@ -35,7 +35,9 @@ async def create_user(
     use_case: CreateUserUseCase = Depends(get_create_user_use_case),
 ):
     try:
-        user = await use_case.execute(name=body.username, email=body.email)
+        user = await use_case.execute(
+            name=body.username, email=body.email, password=body.password
+        )
         return _to_response(user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
