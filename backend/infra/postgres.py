@@ -1,6 +1,13 @@
 import asyncpg
 
-from backend.infra.config import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
+from backend.infra.config import (
+    DB_HOST,
+    DB_NAME,
+    DB_PASSWORD,
+    DB_PORT,
+    DB_SSL_MODE,
+    DB_USER,
+)
 
 
 async def get_db_connection():
@@ -14,7 +21,7 @@ async def get_db_connection():
         database=DB_NAME,
         host=DB_HOST,
         port=DB_PORT,
-        ssl="require",
+        ssl=DB_SSL_MODE if DB_SSL_MODE != "disable" else False,
     )
     try:
         yield conn

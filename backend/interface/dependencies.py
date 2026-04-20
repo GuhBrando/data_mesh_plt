@@ -7,7 +7,13 @@ from backend.infra.repositories.data_contract_repository import (
 from backend.infra.repositories.data_product_repository import (
     PostgresDataProductRepository,
 )
+from backend.infra.repositories.refresh_token_repository import (
+    PostgresRefreshTokenRepository,
+)
 from backend.infra.repositories.user_repository import PostgresUserRepository
+from backend.use_cases.auth.login import LoginUseCase
+from backend.use_cases.auth.logout import LogoutUseCase
+from backend.use_cases.auth.refresh import RefreshUseCase
 from backend.use_cases.data_contract.create import CreateDataContractUseCase
 from backend.use_cases.data_contract.delete import DeleteDataContractUseCase
 from backend.use_cases.data_contract.get import GetDataContractUseCase
@@ -140,3 +146,31 @@ def get_delete_data_product_use_case(
     repo=Depends(get_data_product_repository),
 ) -> DeleteDataProductUseCase:
     return DeleteDataProductUseCase(repo)
+
+
+# --- Auth ---
+
+
+def get_refresh_token_repository(
+    db=Depends(get_db_connection),
+) -> PostgresRefreshTokenRepository:
+    return PostgresRefreshTokenRepository(db)
+
+
+def get_login_use_case(
+    user_repo=Depends(get_user_repository),
+    token_repo=Depends(get_refresh_token_repository),
+) -> LoginUseCase:
+    return LoginUseCase(user_repo=user_repo, token_repo=token_repo)
+
+
+def get_refresh_use_case(
+    token_repo=Depends(get_refresh_token_repository),
+) -> RefreshUseCase:
+    return RefreshUseCase(token_repo=token_repo)
+
+
+def get_logout_use_case(
+    token_repo=Depends(get_refresh_token_repository),
+) -> LogoutUseCase:
+    return LogoutUseCase(token_repo=token_repo)
