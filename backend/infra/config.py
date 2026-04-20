@@ -12,3 +12,9 @@ DB_NAME = os.getenv("DB_NAME", "data_mesh_plt")
 
 _raw_cors = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 CORS_ORIGINS = [o.strip() for o in _raw_cors.split(",") if o.strip()]
+
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "")
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "15")
+)
+JWT_REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7"))
