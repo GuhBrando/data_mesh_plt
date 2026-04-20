@@ -16,6 +16,7 @@ from backend.interface.schemas.user import (
     UserResponseModel,
     UserUpdateModel,
 )
+from backend.interface.security import get_current_user
 from backend.use_cases.user.create import CreateUserUseCase
 from backend.use_cases.user.delete import DeleteUserUseCase
 from backend.use_cases.user.get import GetUserUseCase
@@ -35,14 +36,19 @@ async def create_user(
     use_case: CreateUserUseCase = Depends(get_create_user_use_case),
 ):
     try:
-        user = await use_case.execute(name=body.username, email=body.email)
+        user = await use_case.execute(
+            name=body.username, email=body.email, password=body.password
+        )
         return _to_response(user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/users", response_model=List[UserResponseModel])
-async def list_users(use_case: ListUsersUseCase = Depends(get_list_users_use_case)):
+async def list_users(
+    use_case: ListUsersUseCase = Depends(get_list_users_use_case),
+    _: User = Depends(get_current_user),
+):
     users = await use_case.execute()
     return [_to_response(u) for u in users]
 
@@ -51,6 +57,7 @@ async def list_users(use_case: ListUsersUseCase = Depends(get_list_users_use_cas
 async def get_user(
     user_id: uuid.UUID,
     use_case: GetUserUseCase = Depends(get_get_user_use_case),
+    _: User = Depends(get_current_user),
 ):
     user = await use_case.execute(user_id)
     if not user:
@@ -63,6 +70,7 @@ async def update_user(
     user_id: uuid.UUID,
     body: UserUpdateModel,
     use_case: UpdateUserUseCase = Depends(get_update_user_use_case),
+    _: User = Depends(get_current_user),
 ):
     try:
         user = await use_case.execute(
@@ -79,6 +87,7 @@ async def update_user(
 async def delete_user(
     user_id: uuid.UUID,
     use_case: DeleteUserUseCase = Depends(get_delete_user_use_case),
+    _: User = Depends(get_current_user),
 ):
     deleted = await use_case.execute(user_id)
     if not deleted:

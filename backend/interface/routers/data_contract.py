@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.domain.entities.data_contract import DataContract
+from backend.domain.entities.user import User
 from backend.interface.dependencies import (
     get_create_data_contract_use_case,
     get_delete_data_contract_use_case,
@@ -16,6 +17,7 @@ from backend.interface.schemas.data_contract import (
     DataContractResponseModel,
     DataContractUpdateModel,
 )
+from backend.interface.security import get_current_user
 from backend.use_cases.data_contract.create import CreateDataContractUseCase
 from backend.use_cases.data_contract.delete import DeleteDataContractUseCase
 from backend.use_cases.data_contract.get import GetDataContractUseCase
@@ -40,6 +42,7 @@ def _to_response(contract: DataContract) -> DataContractResponseModel:
 async def create_data_contract(
     body: DataContractCreateModel,
     use_case: CreateDataContractUseCase = Depends(get_create_data_contract_use_case),
+    _: User = Depends(get_current_user),
 ):
     try:
         contract = await use_case.execute(obj=body.obj)
@@ -51,6 +54,7 @@ async def create_data_contract(
 @router.get("/data-contracts", response_model=List[DataContractResponseModel])
 async def list_data_contracts(
     use_case: ListDataContractsUseCase = Depends(get_list_data_contracts_use_case),
+    _: User = Depends(get_current_user),
 ):
     contracts = await use_case.execute()
     return [_to_response(c) for c in contracts]
@@ -60,6 +64,7 @@ async def list_data_contracts(
 async def get_data_contract(
     contract_id: uuid.UUID,
     use_case: GetDataContractUseCase = Depends(get_get_data_contract_use_case),
+    _: User = Depends(get_current_user),
 ):
     contract = await use_case.execute(contract_id)
     if not contract:
@@ -72,6 +77,7 @@ async def update_data_contract(
     contract_id: uuid.UUID,
     body: DataContractUpdateModel,
     use_case: UpdateDataContractUseCase = Depends(get_update_data_contract_use_case),
+    _: User = Depends(get_current_user),
 ):
     try:
         contract = await use_case.execute(contract_id=contract_id, obj=body.obj)
@@ -86,6 +92,7 @@ async def update_data_contract(
 async def delete_data_contract(
     contract_id: uuid.UUID,
     use_case: DeleteDataContractUseCase = Depends(get_delete_data_contract_use_case),
+    _: User = Depends(get_current_user),
 ):
     deleted = await use_case.execute(contract_id)
     if not deleted:
