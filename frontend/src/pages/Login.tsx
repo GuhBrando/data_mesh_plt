@@ -72,16 +72,19 @@ GlassInput.displayName = 'GlassInput'
 
 function GlassField({
   label,
+  htmlFor,
   error,
   children,
 }: {
   label: string
+  htmlFor: string
   error?: string
   children: React.ReactNode
 }) {
   return (
     <div className="mb-4">
       <label
+        htmlFor={htmlFor}
         className="block text-xs font-medium mb-1.5"
         style={{ color: 'rgba(255,255,255,0.6)' }}
       >
@@ -166,11 +169,17 @@ export default function Login() {
         email: values.email,
         password: values.password,
       })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Registration failed. Please try again.')
+      return
+    }
+    try {
       const fetched = await performLogin(values.email, values.password)
       setUser(fetched)
       navigate(redirectTo, { replace: true })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
+    } catch {
+      switchMode('signin')
+      setError('Account created. Please sign in to continue.')
     }
   }
 
@@ -289,10 +298,12 @@ export default function Login() {
           <form onSubmit={signInForm.handleSubmit(handleSignIn)} noValidate>
             <GlassField
               label="Email"
+              htmlFor="signin-email"
               error={signInForm.formState.errors.email?.message}
             >
               <GlassInput
                 {...signInForm.register('email')}
+                id="signin-email"
                 type="email"
                 placeholder="you@company.com"
                 autoComplete="email"
@@ -301,10 +312,12 @@ export default function Login() {
             </GlassField>
             <GlassField
               label="Password"
+              htmlFor="signin-password"
               error={signInForm.formState.errors.password?.message}
             >
               <GlassInput
                 {...signInForm.register('password')}
+                id="signin-password"
                 type="password"
                 placeholder="••••••••"
                 autoComplete="current-password"
@@ -322,10 +335,12 @@ export default function Login() {
           <form onSubmit={registerForm.handleSubmit(handleRegister)} noValidate>
             <GlassField
               label="Username"
+              htmlFor="reg-username"
               error={registerForm.formState.errors.username?.message}
             >
               <GlassInput
                 {...registerForm.register('username')}
+                id="reg-username"
                 type="text"
                 placeholder="johndoe"
                 autoComplete="username"
@@ -334,10 +349,12 @@ export default function Login() {
             </GlassField>
             <GlassField
               label="Email"
+              htmlFor="reg-email"
               error={registerForm.formState.errors.email?.message}
             >
               <GlassInput
                 {...registerForm.register('email')}
+                id="reg-email"
                 type="email"
                 placeholder="you@company.com"
                 autoComplete="email"
@@ -346,10 +363,12 @@ export default function Login() {
             </GlassField>
             <GlassField
               label="Password"
+              htmlFor="reg-password"
               error={registerForm.formState.errors.password?.message}
             >
               <GlassInput
                 {...registerForm.register('password')}
+                id="reg-password"
                 type="password"
                 placeholder="••••••••"
                 autoComplete="new-password"
@@ -358,10 +377,12 @@ export default function Login() {
             </GlassField>
             <GlassField
               label="Confirm Password"
+              htmlFor="reg-confirm"
               error={registerForm.formState.errors.confirmPassword?.message}
             >
               <GlassInput
                 {...registerForm.register('confirmPassword')}
+                id="reg-confirm"
                 type="password"
                 placeholder="••••••••"
                 autoComplete="new-password"
