@@ -35,12 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Restore session from localStorage on mount
   useEffect(() => {
+    let cancelled = false
     const token = getAccessToken()
     if (!token) {
       setIsLoading(false)
       return
     }
-    let cancelled = false
     try {
       const { sub } = decodeJwtPayload(token)
       get<User>(`/users/${sub}`)
@@ -48,8 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .catch(() => { if (!cancelled) clearTokens() })
         .finally(() => { if (!cancelled) setIsLoading(false) })
     } catch {
-      clearTokens()
-      setIsLoading(false)
+      if (!cancelled) {
+        clearTokens()
+        setIsLoading(false)
+      }
     }
     return () => { cancelled = true }
   }, [])
