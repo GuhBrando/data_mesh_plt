@@ -209,3 +209,6 @@ __marimo__/
 # Postgres
 database/data
 *.psql_history
+
+settings.local.json
+.superpowers

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useLayoutEffect } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -137,6 +137,33 @@ export default function Login() {
   const signInForm = useForm<SignInValues>({ resolver: zodResolver(signInSchema) })
   const registerForm = useForm<RegisterValues>({ resolver: zodResolver(registerSchema) })
 
+  // Ref to the dynamic content area — used to animate height when mode changes
+  const formContainerRef = useRef<HTMLDivElement>(null)
+
+  // After mode changes, animate the container from its locked height to the new content height
+  useLayoutEffect(() => {
+    const el = formContainerRef.current
+    if (!el || !el.style.height) return
+
+    const lockedHeight = el.style.height
+
+    requestAnimationFrame(() => {
+      const target = formContainerRef.current
+      if (!target) return
+
+      // Measure true content height without the container constraint
+      target.style.height = 'auto'
+      const targetHeight = `${target.scrollHeight}px`
+
+      // Restore locked height and flush layout — this becomes the transition's start value
+      target.style.height = lockedHeight
+      target.getBoundingClientRect()
+
+      // Setting to target now triggers the CSS transition
+      target.style.height = targetHeight
+    })
+  }, [mode])
+
   // Already authenticated — skip the login page
   if (!isLoading && user) return <Navigate to="/dashboard" replace />
 
@@ -144,6 +171,9 @@ export default function Login() {
   const redirectTo = isSafeRedirect(rawRedirect) ? rawRedirect : '/dashboard'
 
   function switchMode(next: 'signin' | 'register') {
+    // Lock current height before content changes so the transition has a start value
+    const el = formContainerRef.current
+    if (el) el.style.height = `${el.scrollHeight}px`
     setMode(next)
     setError(null)
     signInForm.reset()
@@ -245,31 +275,47 @@ export default function Login() {
           </span>
         </div>
 
-        {/* Pill toggle */}
+        {/* Pill toggle — sliding indicator moves left/right on click */}
         <div
           className="flex mb-7"
           style={{
+            position: 'relative',
             background: 'rgba(255,255,255,0.06)',
             border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: '999px',
             padding: '3px',
           }}
         >
+          {/* Sliding active pill */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: '3px',
+              bottom: '3px',
+              left: '3px',
+              width: 'calc(50% - 3px)',
+              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+              borderRadius: '999px',
+              transform: mode === 'signin' ? 'translateX(0)' : 'translateX(100%)',
+              transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+          />
           {(['signin', 'register'] as const).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => switchMode(m)}
-              className="flex-1 py-2 text-sm font-semibold transition-all"
+              className="flex-1 py-2 text-sm font-semibold"
               style={{
+                position: 'relative',
+                zIndex: 1,
                 borderRadius: '999px',
                 border: 'none',
                 cursor: 'pointer',
-                background:
-                  mode === m
-                    ? 'linear-gradient(135deg, #6366f1, #a855f7)'
-                    : 'transparent',
+                background: 'transparent',
                 color: mode === m ? '#fff' : 'rgba(255,255,255,0.4)',
+                transition: 'color 0.25s ease',
               }}
             >
               {m === 'signin' ? 'Sign In' : 'Register'}
@@ -277,123 +323,129 @@ export default function Login() {
           ))}
         </div>
 
-        {/* Error banner */}
-        {error && (
-          <div
-            className="mb-5 text-sm"
-            style={{
-              background: 'rgba(239,68,68,0.15)',
-              border: '1px solid rgba(239,68,68,0.3)',
-              borderRadius: '10px',
-              padding: '12px 14px',
-              color: '#fca5a5',
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {/* Dynamic area — height animates smoothly when switching modes */}
+        <div
+          ref={formContainerRef}
+          style={{ overflow: 'hidden', transition: 'height 0.3s ease' }}
+        >
+          {/* Error banner */}
+          {error && (
+            <div
+              className="mb-5 text-sm"
+              style={{
+                background: 'rgba(239,68,68,0.15)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: '10px',
+                padding: '12px 14px',
+                color: '#fca5a5',
+              }}
+            >
+              {error}
+            </div>
+          )}
 
-        {/* Sign In form */}
-        {mode === 'signin' && (
-          <form onSubmit={signInForm.handleSubmit(handleSignIn)} noValidate>
-            <GlassField
-              label="Email"
-              htmlFor="signin-email"
-              error={signInForm.formState.errors.email?.message}
-            >
-              <GlassInput
-                {...signInForm.register('email')}
-                id="signin-email"
-                type="email"
-                placeholder="you@company.com"
-                autoComplete="email"
-                hasError={!!signInForm.formState.errors.email}
-              />
-            </GlassField>
-            <GlassField
-              label="Password"
-              htmlFor="signin-password"
-              error={signInForm.formState.errors.password?.message}
-            >
-              <GlassInput
-                {...signInForm.register('password')}
-                id="signin-password"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                hasError={!!signInForm.formState.errors.password}
-              />
-            </GlassField>
-            <GlassButton loading={signInForm.formState.isSubmitting}>
-              Sign In
-            </GlassButton>
-          </form>
-        )}
+          {/* Sign In form */}
+          {mode === 'signin' && (
+            <form onSubmit={signInForm.handleSubmit(handleSignIn)} noValidate>
+              <GlassField
+                label="Email"
+                htmlFor="signin-email"
+                error={signInForm.formState.errors.email?.message}
+              >
+                <GlassInput
+                  {...signInForm.register('email')}
+                  id="signin-email"
+                  type="email"
+                  placeholder="you@company.com"
+                  autoComplete="email"
+                  hasError={!!signInForm.formState.errors.email}
+                />
+              </GlassField>
+              <GlassField
+                label="Password"
+                htmlFor="signin-password"
+                error={signInForm.formState.errors.password?.message}
+              >
+                <GlassInput
+                  {...signInForm.register('password')}
+                  id="signin-password"
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  hasError={!!signInForm.formState.errors.password}
+                />
+              </GlassField>
+              <GlassButton loading={signInForm.formState.isSubmitting}>
+                Sign In
+              </GlassButton>
+            </form>
+          )}
 
-        {/* Register form */}
-        {mode === 'register' && (
-          <form onSubmit={registerForm.handleSubmit(handleRegister)} noValidate>
-            <GlassField
-              label="Username"
-              htmlFor="reg-username"
-              error={registerForm.formState.errors.username?.message}
-            >
-              <GlassInput
-                {...registerForm.register('username')}
-                id="reg-username"
-                type="text"
-                placeholder="johndoe"
-                autoComplete="username"
-                hasError={!!registerForm.formState.errors.username}
-              />
-            </GlassField>
-            <GlassField
-              label="Email"
-              htmlFor="reg-email"
-              error={registerForm.formState.errors.email?.message}
-            >
-              <GlassInput
-                {...registerForm.register('email')}
-                id="reg-email"
-                type="email"
-                placeholder="you@company.com"
-                autoComplete="email"
-                hasError={!!registerForm.formState.errors.email}
-              />
-            </GlassField>
-            <GlassField
-              label="Password"
-              htmlFor="reg-password"
-              error={registerForm.formState.errors.password?.message}
-            >
-              <GlassInput
-                {...registerForm.register('password')}
-                id="reg-password"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="new-password"
-                hasError={!!registerForm.formState.errors.password}
-              />
-            </GlassField>
-            <GlassField
-              label="Confirm Password"
-              htmlFor="reg-confirm"
-              error={registerForm.formState.errors.confirmPassword?.message}
-            >
-              <GlassInput
-                {...registerForm.register('confirmPassword')}
-                id="reg-confirm"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="new-password"
-                hasError={!!registerForm.formState.errors.confirmPassword}
-              />
-            </GlassField>
-            <GlassButton loading={registerForm.formState.isSubmitting}>
-              Create Account
-            </GlassButton>
-          </form>
-        )}
+          {/* Register form */}
+          {mode === 'register' && (
+            <form onSubmit={registerForm.handleSubmit(handleRegister)} noValidate>
+              <GlassField
+                label="Username"
+                htmlFor="reg-username"
+                error={registerForm.formState.errors.username?.message}
+              >
+                <GlassInput
+                  {...registerForm.register('username')}
+                  id="reg-username"
+                  type="text"
+                  placeholder="johndoe"
+                  autoComplete="username"
+                  hasError={!!registerForm.formState.errors.username}
+                />
+              </GlassField>
+              <GlassField
+                label="Email"
+                htmlFor="reg-email"
+                error={registerForm.formState.errors.email?.message}
+              >
+                <GlassInput
+                  {...registerForm.register('email')}
+                  id="reg-email"
+                  type="email"
+                  placeholder="you@company.com"
+                  autoComplete="email"
+                  hasError={!!registerForm.formState.errors.email}
+                />
+              </GlassField>
+              <GlassField
+                label="Password"
+                htmlFor="reg-password"
+                error={registerForm.formState.errors.password?.message}
+              >
+                <GlassInput
+                  {...registerForm.register('password')}
+                  id="reg-password"
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  hasError={!!registerForm.formState.errors.password}
+                />
+              </GlassField>
+              <GlassField
+                label="Confirm Password"
+                htmlFor="reg-confirm"
+                error={registerForm.formState.errors.confirmPassword?.message}
+              >
+                <GlassInput
+                  {...registerForm.register('confirmPassword')}
+                  id="reg-confirm"
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  hasError={!!registerForm.formState.errors.confirmPassword}
+                />
+              </GlassField>
+              <GlassButton loading={registerForm.formState.isSubmitting}>
+                Create Account
+              </GlassButton>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )
