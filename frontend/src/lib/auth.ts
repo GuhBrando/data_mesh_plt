@@ -20,7 +20,9 @@ export function clearTokens(): void {
 }
 
 export function decodeJwtPayload(token: string): { sub: string; exp: number } {
-  const segment = token.split('.')[1]
+  const parts = token.split('.')
+  if (parts.length !== 3) throw new Error('decodeJwtPayload: invalid JWT structure')
+  const segment = parts[1]
   const padded = segment.replace(/-/g, '+').replace(/_/g, '/').padEnd(
     segment.length + ((4 - (segment.length % 4)) % 4),
     '=',

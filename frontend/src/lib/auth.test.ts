@@ -39,6 +39,10 @@ describe('decodeJwtPayload', () => {
     expect(result.exp).toBe(9_999_999_999)
   })
 
+  it('throws on malformed token', () => {
+    expect(() => decodeJwtPayload('notajwt')).toThrow('invalid JWT structure')
+  })
+
   it('handles URL-safe base64 characters', () => {
     // base64url uses - and _ instead of + and /
     const raw = JSON.stringify({ sub: 'u', exp: 1 })
