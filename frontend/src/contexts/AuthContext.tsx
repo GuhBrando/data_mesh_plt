@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react'
-import { getAccessToken, clearTokens, decodeJwtPayload } from '../lib/auth'
+import { getAccessToken, clearTokens, decodeJwtPayload, isTokenExpired } from '../lib/auth'
 import { get } from '../lib/api'
 import type { User } from '../types'
 
@@ -37,7 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
     const token = getAccessToken()
-    if (!token) {
+    if (!token || isTokenExpired(token)) {
+      clearTokens()
       setIsLoading(false)
       return
     }

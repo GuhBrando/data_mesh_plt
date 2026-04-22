@@ -33,3 +33,12 @@ export function decodeJwtPayload(token: string): { sub: string; exp: number } {
 export function isSafeRedirect(url: unknown): url is string {
   return typeof url === 'string' && url.length > 0 && url.startsWith('/') && !url.startsWith('//')
 }
+
+export function isTokenExpired(token: string): boolean {
+  try {
+    const { exp } = decodeJwtPayload(token)
+    return Date.now() / 1000 >= exp - 30
+  } catch {
+    return true
+  }
+}

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -24,8 +25,10 @@ const navItems = [
 export default function Sidebar() {
   const { theme, toggle } = useTheme()
   const { user, logout } = useAuth()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   async function handleLogout() {
+    setIsLoggingOut(true)
     try {
       const refreshToken = getRefreshToken()
       if (refreshToken) {
@@ -83,11 +86,12 @@ export default function Sidebar() {
         <div className="flex items-center justify-between">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/20 transition-colors text-xs"
+            disabled={isLoggingOut}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/20 transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             title="Sign out"
           >
             <LogOut size={14} />
-            Sign out
+            {isLoggingOut ? 'Signing out...' : 'Sign out'}
           </button>
           <button
             onClick={toggle}

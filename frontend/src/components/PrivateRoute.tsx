@@ -19,7 +19,7 @@ export default function PrivateRoute() {
   if (!user) {
     return (
       <Navigate
-        to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
+        to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`}
         replace
       />
     )

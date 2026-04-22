@@ -6,6 +6,7 @@ import {
   clearTokens,
   decodeJwtPayload,
   isSafeRedirect,
+  isTokenExpired,
 } from './auth'
 
 describe('token storage', () => {
@@ -51,6 +52,26 @@ describe('decodeJwtPayload', () => {
     const token = `h.${payload}.s`
     const result = decodeJwtPayload(token)
     expect(result.sub).toBe('u')
+  })
+})
+
+describe('isTokenExpired', () => {
+  it('returns false for a token that expires in the future', () => {
+    const exp = Math.floor(Date.now() / 1000) + 3600
+    const payload = btoa(JSON.stringify({ sub: 'u', exp }))
+    const token = `h.${payload}.s`
+    expect(isTokenExpired(token)).toBe(false)
+  })
+
+  it('returns true for a token that is expired', () => {
+    const exp = Math.floor(Date.now() / 1000) - 60
+    const payload = btoa(JSON.stringify({ sub: 'u', exp }))
+    const token = `h.${payload}.s`
+    expect(isTokenExpired(token)).toBe(true)
+  })
+
+  it('returns true for a malformed token', () => {
+    expect(isTokenExpired('bad')).toBe(true)
   })
 })
 
