@@ -1,0 +1,72 @@
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  type ReactNode,
+} from 'react'
+import { getAccessToken, clearTokens, decodeJwtPayload } from '../lib/auth'
+import { get } from '../lib/api'
+import type { User } from '../types'
+
+interface AuthContextValue {
+  user: User | null
+  isLoading: boolean
+  setUser: (user: User | null) => void
+  logout: () => void
+}
+
+const AuthContext = createContext<AuthContextValue>({
+  user: null,
+  isLoading: true,
+  setUser: () => {},
+  logout: () => {},
+})
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const logout = useCallback(() => {
+    clearTokens()
+    setUser(null)
+  }, [])
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const token = getAccessToken()
+    if (!token) {
+      setIsLoading(false)
+      return
+    }
+    let cancelled = false
+    try {
+      const { sub } = decodeJwtPayload(token)
+      get<User>(`/users/${sub}`)
+        .then((u) => { if (!cancelled) setUser(u) })
+        .catch(() => { if (!cancelled) clearTokens() })
+        .finally(() => { if (!cancelled) setIsLoading(false) })
+    } catch {
+      clearTokens()
+      setIsLoading(false)
+    }
+    return () => { cancelled = true }
+  }, [])
+
+  // Listen for forced logout dispatched by api.ts when refresh fails
+  useEffect(() => {
+    window.addEventListener('auth:logout', logout)
+    return () => window.removeEventListener('auth:logout', logout)
+  }, [logout])
+
+  return (
+    <AuthContext.Provider value={{ user, isLoading, setUser, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  return useContext(AuthContext)
+}
