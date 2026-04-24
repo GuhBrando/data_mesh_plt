@@ -161,6 +161,13 @@ export default function Login() {
 
       // Setting to target now triggers the CSS transition
       target.style.height = targetHeight
+
+      // After the transition, restore auto so errors/validation text can expand the container freely
+      const onEnd = () => {
+        target.style.height = 'auto'
+        target.removeEventListener('transitionend', onEnd)
+      }
+      target.addEventListener('transitionend', onEnd)
     })
   }, [mode])
 
