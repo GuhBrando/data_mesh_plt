@@ -116,7 +116,10 @@ export default function Table<T>({
             role={onRowClick ? 'button' : undefined}
             tabIndex={onRowClick ? 0 : undefined}
             onKeyDown={onRowClick ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') onRowClick(row)
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onRowClick(row)
+              }
             } : undefined}
             className={`bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 transition-colors ${
               onRowClick
