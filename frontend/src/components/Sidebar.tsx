@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -7,8 +8,12 @@ import {
   Database,
   Sun,
   Moon,
+  LogOut,
 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
+import { useAuth } from '../contexts/AuthContext'
+import { post } from '../lib/api'
+import { getRefreshToken } from '../lib/auth'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -19,6 +24,20 @@ const navItems = [
 
 export default function Sidebar() {
   const { theme, toggle } = useTheme()
+  const { user, logout } = useAuth()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  async function handleLogout() {
+    setIsLoggingOut(true)
+    try {
+      const refreshToken = getRefreshToken()
+      if (refreshToken) {
+        await post('/auth/logout', { refresh_token: refreshToken })
+      }
+    } finally {
+      logout()
+    }
+  }
 
   return (
     <aside className="w-64 shrink-0 bg-slate-900 min-h-screen flex flex-col">
@@ -28,9 +47,7 @@ export default function Sidebar() {
           <Database size={16} className="text-white" />
         </div>
         <div>
-          <p className="text-white font-semibold text-sm leading-tight">
-            Data Mesh
-          </p>
+          <p className="text-white font-semibold text-sm leading-tight">Data Mesh</p>
           <p className="text-slate-400 text-xs">Platform</p>
         </div>
       </div>
@@ -44,9 +61,7 @@ export default function Sidebar() {
           <NavLink
             key={to}
             to={to}
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? 'active' : ''}`
-            }
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
           >
             <Icon size={16} className="shrink-0" />
             <span>{label}</span>
@@ -55,16 +70,38 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-800 flex items-center justify-between">
-        <p className="text-xs text-slate-500">Data Mesh Platform v0.1</p>
-        <button
-          onClick={toggle}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-        >
-          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-        </button>
+      <div className="p-4 border-t border-slate-800">
+        {/* User info */}
+        {user && (
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+              <span className="text-white text-xs font-semibold">
+                {user.username.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <span className="text-slate-300 text-xs truncate">{user.username}</span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/20 transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Sign out"
+          >
+            <LogOut size={14} />
+            {isLoggingOut ? 'Signing out...' : 'Sign out'}
+          </button>
+          <button
+            onClick={toggle}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          >
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+        </div>
       </div>
     </aside>
   )
