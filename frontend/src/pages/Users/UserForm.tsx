@@ -18,6 +18,7 @@ interface UserFormProps {
   onSubmit: (values: FormValues) => void
   onCancel: () => void
   isSubmitting: boolean
+  apiError?: string
 }
 
 export default function UserForm({
@@ -25,6 +26,7 @@ export default function UserForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  apiError,
 }: UserFormProps) {
   const {
     register,
@@ -59,6 +61,10 @@ export default function UserForm({
         error={errors.email?.message}
         {...register('email')}
       />
+
+      {apiError && (
+        <p className="text-sm text-red-500 dark:text-red-400">{apiError}</p>
+      )}
 
       <div className="flex justify-end gap-3 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>

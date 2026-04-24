@@ -189,12 +189,8 @@ export default function UsersList() {
           onSubmit={handleCreate}
           onCancel={() => setCreateOpen(false)}
           isSubmitting={createMutation.isPending}
+          apiError={createMutation.isError ? createMutation.error.message : undefined}
         />
-        {createMutation.isError && (
-          <p className="mt-3 text-sm text-red-500">
-            {createMutation.error.message}
-          </p>
-        )}
       </Modal>
 
       {/* Edit Modal */}
@@ -209,12 +205,8 @@ export default function UsersList() {
           onSubmit={handleUpdate}
           onCancel={() => setEditTarget(null)}
           isSubmitting={updateMutation.isPending}
+          apiError={updateMutation.isError ? updateMutation.error.message : undefined}
         />
-        {updateMutation.isError && (
-          <p className="mt-3 text-sm text-red-500">
-            {updateMutation.error.message}
-          </p>
-        )}
       </Modal>
 
       {/* Delete Confirmation Modal */}

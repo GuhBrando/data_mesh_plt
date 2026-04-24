@@ -18,7 +18,15 @@ async function handleResponse<T>(res: Response): Promise<T> {
     try {
       const body = await res.json()
       if (body?.detail) {
-        message = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail)
+        if (Array.isArray(body.detail)) {
+          message = body.detail
+            .map((e: { msg?: string }) =>
+              (e.msg ?? 'Validation error').replace(/^Value error,\s*/i, ''),
+            )
+            .join('. ')
+        } else if (typeof body.detail === 'string') {
+          message = body.detail
+        }
       } else if (body?.message) {
         message = body.message
       }
