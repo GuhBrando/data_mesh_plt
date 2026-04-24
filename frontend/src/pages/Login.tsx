@@ -248,7 +248,7 @@ export default function Login() {
 
       {/* Glass card */}
       <div
-        className="relative z-10 w-full mx-4"
+        className="relative z-10 w-full mx-4 p-5 sm:px-9 sm:py-10"
         style={{
           maxWidth: '400px',
           background: 'rgba(255,255,255,0.05)',
@@ -256,7 +256,6 @@ export default function Login() {
           WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '20px',
-          padding: '40px 36px',
         }}
       >
         {/* Logo row */}
