@@ -1,5 +1,7 @@
 import uuid
 
+import asyncpg
+
 from backend.domain.entities.user import User
 from backend.domain.interfaces.user_repository import IUserRepository
 from backend.domain.value_objects.email import Email
@@ -10,23 +12,26 @@ class PostgresUserRepository(IUserRepository):
         self.db = db
 
     async def create(self, name: str, email: str, password_hash: str) -> User:
-        async with self.db.transaction():
-            row = await self.db.fetchrow(
-                """
-                INSERT INTO iam.users (name, email, password_hash)
-                VALUES ($1, $2, $3)
-                RETURNING id, name, email, password_hash;
-                """,
-                name,
-                email,
-                password_hash,
-            )
-            return User(
-                id=row["id"],
-                name=row["name"],
-                email=Email(row["email"]),
-                password_hash=row["password_hash"],
-            )
+        try:
+            async with self.db.transaction():
+                row = await self.db.fetchrow(
+                    """
+                    INSERT INTO iam.users (name, email, password_hash)
+                    VALUES ($1, $2, $3)
+                    RETURNING id, name, email, password_hash;
+                    """,
+                    name,
+                    email,
+                    password_hash,
+                )
+                return User(
+                    id=row["id"],
+                    name=row["name"],
+                    email=Email(row["email"]),
+                    password_hash=row["password_hash"],
+                )
+        except asyncpg.UniqueViolationError:
+            raise ValueError("Email already in use")
 
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
         row = await self.db.fetchrow(

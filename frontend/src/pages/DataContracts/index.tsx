@@ -144,6 +144,7 @@ export default function DataContractsList() {
           keyExtractor={(c) => c.id}
           onRowClick={(c) => navigate(`/data-contracts/${c.id}`)}
           emptyMessage="No contracts found."
+          mobileCardConfig={{ titleKey: 'preview', badgeKey: 'id' }}
         />
       )}
 

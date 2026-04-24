@@ -22,6 +22,14 @@
     @apply bg-blue-600 text-white;
   }
 
+  .bottom-nav-link {
+    @apply flex flex-col items-center justify-center gap-1 flex-1 py-2 text-slate-400 hover:text-white transition-colors text-xs;
+  }
+
+  .bottom-nav-link.active {
+    @apply text-blue-400;
+  }
+
   .card {
     @apply bg-white rounded-xl border border-gray-200 shadow-sm dark:bg-slate-800 dark:border-slate-700;
   }

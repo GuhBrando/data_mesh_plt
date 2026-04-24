@@ -161,6 +161,13 @@ export default function Login() {
 
       // Setting to target now triggers the CSS transition
       target.style.height = targetHeight
+
+      // After the transition, restore auto so errors/validation text can expand the container freely
+      const onEnd = () => {
+        target.style.height = 'auto'
+        target.removeEventListener('transitionend', onEnd)
+      }
+      target.addEventListener('transitionend', onEnd)
     })
   }, [mode])
 
@@ -193,6 +200,7 @@ export default function Login() {
 
   async function handleRegister(values: RegisterValues) {
     setError(null)
+    registerForm.clearErrors('email')
     try {
       await post('/users', {
         username: values.username,
@@ -200,7 +208,12 @@ export default function Login() {
         password: values.password,
       })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Registration failed. Please try again.')
+      const msg = e instanceof Error ? e.message : 'Registration failed. Please try again.'
+      if (/email already in use/i.test(msg)) {
+        registerForm.setError('email', { message: 'This email is already in use' })
+      } else {
+        setError(msg)
+      }
       return
     }
     try {
@@ -248,7 +261,7 @@ export default function Login() {
 
       {/* Glass card */}
       <div
-        className="relative z-10 w-full mx-4"
+        className="relative z-10 w-full mx-4 p-5 sm:px-9 sm:py-10"
         style={{
           maxWidth: '400px',
           background: 'rgba(255,255,255,0.05)',
@@ -256,7 +269,6 @@ export default function Login() {
           WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '20px',
-          padding: '40px 36px',
         }}
       >
         {/* Logo row */}
