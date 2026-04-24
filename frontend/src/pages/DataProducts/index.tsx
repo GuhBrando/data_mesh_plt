@@ -141,6 +141,7 @@ export default function DataProductsList() {
           keyExtractor={(p) => p.id}
           onRowClick={(p) => navigate(`/data-products/${p.id}`)}
           emptyMessage="No products found."
+          mobileCardConfig={{ titleKey: 'name' }}
         />
       )}
 
