@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import Table from './Table'
 
@@ -41,7 +41,7 @@ describe('Table', () => {
     expect(screen.getAllByText('Bob')).toHaveLength(2)
   })
 
-  it('fires onRowClick when a card is clicked', async () => {
+  it('fires onRowClick when a card is clicked', () => {
     const handleClick = vi.fn()
     render(
       <Table
@@ -52,8 +52,8 @@ describe('Table', () => {
         mobileCardConfig={{ titleKey: 'name' }}
       />
     )
-    const cards = document.querySelectorAll('[data-testid="mobile-card"]')
-    ;(cards[0] as HTMLElement).click()
+    const cards = screen.getAllByTestId('mobile-card')
+    fireEvent.click(cards[0])
     expect(handleClick).toHaveBeenCalledWith(data[0])
   })
 })

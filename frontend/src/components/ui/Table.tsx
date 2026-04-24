@@ -85,6 +85,9 @@ export default function Table<T>({
   if (!mobileCardConfig) return tableNode
 
   const titleCol = columns.find((c) => c.key === mobileCardConfig.titleKey)
+  if (import.meta.env.DEV && !titleCol) {
+    console.warn(`[Table] mobileCardConfig.titleKey "${mobileCardConfig.titleKey}" does not match any column key`)
+  }
   const badgeCol = mobileCardConfig.badgeKey
     ? columns.find((c) => c.key === mobileCardConfig.badgeKey)
     : undefined
@@ -110,6 +113,11 @@ export default function Table<T>({
             key={keyExtractor(row)}
             data-testid="mobile-card"
             onClick={onRowClick ? () => onRowClick(row) : undefined}
+            role={onRowClick ? 'button' : undefined}
+            tabIndex={onRowClick ? 0 : undefined}
+            onKeyDown={onRowClick ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') onRowClick(row)
+            } : undefined}
             className={`bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 transition-colors ${
               onRowClick
                 ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20'
