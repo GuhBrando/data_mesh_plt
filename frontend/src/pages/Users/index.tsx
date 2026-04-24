@@ -174,6 +174,7 @@ export default function UsersList() {
           data={users}
           keyExtractor={(u) => u.id}
           emptyMessage="No users found."
+          mobileCardConfig={{ titleKey: 'name' }}
         />
       )}
 
