@@ -32,6 +32,7 @@ export default function UserForm({
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -45,6 +46,12 @@ export default function UserForm({
       reset({ username: defaultValues.username, email: defaultValues.email })
     }
   }, [defaultValues, reset])
+
+  useEffect(() => {
+    if (apiError && /email already in use/i.test(apiError)) {
+      setError('email', { message: 'This email is already in use' })
+    }
+  }, [apiError, setError])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -62,7 +69,7 @@ export default function UserForm({
         {...register('email')}
       />
 
-      {apiError && (
+      {apiError && !/email already in use/i.test(apiError) && (
         <p className="text-sm text-red-500 dark:text-red-400">{apiError}</p>
       )}
 

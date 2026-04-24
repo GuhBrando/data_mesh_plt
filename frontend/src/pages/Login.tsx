@@ -200,6 +200,7 @@ export default function Login() {
 
   async function handleRegister(values: RegisterValues) {
     setError(null)
+    registerForm.clearErrors('email')
     try {
       await post('/users', {
         username: values.username,
@@ -207,7 +208,12 @@ export default function Login() {
         password: values.password,
       })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Registration failed. Please try again.')
+      const msg = e instanceof Error ? e.message : 'Registration failed. Please try again.'
+      if (/email already in use/i.test(msg)) {
+        registerForm.setError('email', { message: 'This email is already in use' })
+      } else {
+        setError(msg)
+      }
       return
     }
     try {
