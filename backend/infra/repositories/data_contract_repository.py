@@ -22,7 +22,7 @@ class PostgresDataContractRepository(IDataContractRepository):
             )
             return DataContract(
                 id=row["id"],
-                obj=row["obj"],
+                obj=json.loads(row["obj"]),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
             )
@@ -36,7 +36,7 @@ class PostgresDataContractRepository(IDataContractRepository):
         if row:
             return DataContract(
                 id=row["id"],
-                obj=row["obj"],
+                obj=json.loads(row["obj"]),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
             )
@@ -49,7 +49,7 @@ class PostgresDataContractRepository(IDataContractRepository):
         return [
             DataContract(
                 id=r["id"],
-                obj=r["obj"],
+                obj=json.loads(r["obj"]),
                 created_at=r["created_at"],
                 updated_at=r["updated_at"],
             )
@@ -73,7 +73,7 @@ class PostgresDataContractRepository(IDataContractRepository):
             if row:
                 return DataContract(
                     id=row["id"],
-                    obj=row["obj"],
+                    obj=json.loads(row["obj"]),
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
                 )
