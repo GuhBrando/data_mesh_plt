@@ -10,8 +10,27 @@ class UpdateDataContractUseCase:
         self.repository = repository
 
     async def execute(
-        self, contract_id: uuid.UUID, obj: dict[str, Any]
+        self,
+        contract_id: uuid.UUID,
+        title: str,
+        version: str,
+        owner: str,
+        domain: str,
+        tier: int,
+        status: str,
+        models: dict[str, Any],
+        servicelevels: dict[str, Any],
     ) -> DataContract | None:
-        if not obj:
-            raise ValueError("Data contract obj cannot be empty")
-        return await self.repository.update(contract_id=contract_id, obj=obj)
+        if not title:
+            raise ValueError("Data contract title cannot be empty")
+        return await self.repository.update(
+            contract_id=contract_id,
+            title=title,
+            version=version,
+            owner=owner,
+            domain=domain,
+            tier=tier,
+            status=status,
+            models=models,
+            servicelevels=servicelevels,
+        )
