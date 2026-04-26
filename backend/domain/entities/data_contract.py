@@ -7,11 +7,25 @@ class DataContract:
     def __init__(
         self,
         id: uuid.UUID,
-        obj: dict[str, Any],
+        title: str,
+        version: str,
+        owner: str,
+        domain: str,
+        tier: int,
+        status: str,
+        models: dict[str, Any],
+        servicelevels: dict[str, Any],
         created_at: datetime,
         updated_at: datetime,
     ):
         self.id = id
-        self.obj = obj
+        self.title = title
+        self.version = version
+        self.owner = owner
+        self.domain = domain
+        self.tier = tier
+        self.status = status
+        self.models = models
+        self.servicelevels = servicelevels
         self.created_at = created_at
         self.updated_at = updated_at
