@@ -115,3 +115,11 @@ export async function del(path: string): Promise<void> {
   const res = await fetchWithRetry(`${BASE_URL}${path}`, { method: 'DELETE' })
   await handleResponse<void>(res)
 }
+
+export async function getText(path: string): Promise<string> {
+  const res = await fetchWithRetry(`${BASE_URL}${path}`, { method: 'GET' })
+  if (!res.ok) {
+    throw new ApiError(res.status, `HTTP error ${res.status}`)
+  }
+  return res.text()
+}
