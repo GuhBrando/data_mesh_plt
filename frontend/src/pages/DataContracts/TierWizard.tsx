@@ -82,12 +82,9 @@ export default function TierWizard({ value, onChange }: TierWizardProps) {
                 </option>
               ))}
             </select>
-            <button
-              onClick={reset}
-              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-            >
+            <Button variant="ghost" size="sm" onClick={reset}>
               Restart
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import type { SchemaField } from '../../types'
 
@@ -17,6 +18,12 @@ const emptyField = (): SchemaField => ({
 })
 
 export default function ContractFields({ fields, onChange }: ContractFieldsProps) {
+  const idsRef = useRef<string[]>([])
+  const getKey = (index: number): string => {
+    while (idsRef.current.length <= index) idsRef.current.push(crypto.randomUUID())
+    return idsRef.current[index]
+  }
+
   const update = (index: number, patch: Partial<SchemaField>) => {
     const next = fields.map((f, i) => (i === index ? { ...f, ...patch } : f))
     onChange(next)
@@ -24,7 +31,10 @@ export default function ContractFields({ fields, onChange }: ContractFieldsProps
 
   const add = () => onChange([...fields, emptyField()])
 
-  const remove = (index: number) => onChange(fields.filter((_, i) => i !== index))
+  const remove = (index: number) => {
+    idsRef.current.splice(index, 1)
+    onChange(fields.filter((_, i) => i !== index))
+  }
 
   return (
     <div className="space-y-3">
@@ -33,7 +43,7 @@ export default function ContractFields({ fields, onChange }: ContractFieldsProps
       )}
       {fields.map((field, i) => (
         <div
-          key={i}
+          key={getKey(i)}
           className="grid grid-cols-12 gap-2 items-center rounded border border-gray-200 dark:border-slate-700 p-2 bg-gray-50 dark:bg-slate-900"
         >
           {/* Name */}
