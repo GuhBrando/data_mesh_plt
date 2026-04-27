@@ -1,3 +1,11 @@
+export interface QualityRule {
+  dimension: 'completeness' | 'freshness' | 'uniqueness' | 'validity' | 'integrity'
+  column: string
+  operator: '>=' | '<=' | '='
+  threshold: string
+  description: string
+}
+
 export interface SchemaField {
   name: string
   type: 'string' | 'integer' | 'float' | 'boolean' | 'date' | 'timestamp'
@@ -14,7 +22,7 @@ export interface DataContract {
   domain: string
   tier: 1 | 2 | 3 | 4
   status: 'draft' | 'in_review' | 'active' | 'deprecated'
-  models: { fields: SchemaField[] }
+  models: { fields: SchemaField[]; quality?: QualityRule[] }
   servicelevels: {
     freshness: string
     availability: string
@@ -32,7 +40,7 @@ export interface DataContractInput {
   domain: string
   tier: number
   status: string
-  models: { fields: SchemaField[] }
+  models: { fields: SchemaField[]; quality?: QualityRule[] }
   servicelevels: {
     freshness: string
     availability: string

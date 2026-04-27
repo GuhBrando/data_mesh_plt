@@ -46,6 +46,8 @@ def _to_response(contract: DataContract) -> DataContractResponseModel:
 
 
 def _assemble_yaml(contract: DataContract) -> str:
+    models_data = dict(contract.models)
+    quality_data = models_data.pop("quality", [])
     payload = {
         "dataContractSpecification": "0.9.3",
         "id": str(contract.id),
@@ -56,10 +58,12 @@ def _assemble_yaml(contract: DataContract) -> str:
             "domain": contract.domain,
             "status": contract.status,
         },
-        "models": contract.models,
+        "models": models_data,
         "servicelevels": contract.servicelevels,
         "x-tier": contract.tier,
     }
+    if quality_data:
+        payload["quality"] = quality_data
     return yaml.dump(
         payload, default_flow_style=False, allow_unicode=True, sort_keys=False
     )

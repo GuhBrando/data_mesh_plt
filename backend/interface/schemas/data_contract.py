@@ -13,8 +13,19 @@ class SchemaField(BaseModel):
     primary_key: bool = False
 
 
+class QualityRule(BaseModel):
+    dimension: Literal[
+        "completeness", "freshness", "uniqueness", "validity", "integrity"
+    ]
+    column: str = ""
+    operator: Literal[">=", "<=", "="]
+    threshold: str
+    description: str = ""
+
+
 class ModelsSection(BaseModel):
     fields: list[SchemaField] = []
+    quality: list[QualityRule] = []
 
 
 class ServiceLevels(BaseModel):

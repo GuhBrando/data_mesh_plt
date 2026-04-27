@@ -185,6 +185,37 @@ export default function DataContractDetail() {
         )}
       </Card>
 
+      {/* Quality Rules card */}
+      {(contract.models.quality ?? []).length > 0 && (
+        <Card>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200 mb-3">
+            Quality Rules ({contract.models.quality!.length})
+          </h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-gray-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-700">
+                <th className="pb-2 pr-4">Dimension</th>
+                <th className="pb-2 pr-4">Column</th>
+                <th className="pb-2 pr-4">Operator</th>
+                <th className="pb-2 pr-4">Threshold</th>
+                <th className="pb-2">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contract.models.quality!.map((r, i) => (
+                <tr key={i} className="border-b border-gray-100 dark:border-slate-800 last:border-0">
+                  <td className="py-2 pr-4 text-gray-800 dark:text-slate-200">{r.dimension}</td>
+                  <td className="py-2 pr-4 font-mono text-gray-600 dark:text-slate-300">{r.column || '—'}</td>
+                  <td className="py-2 pr-4 text-gray-500 dark:text-slate-400">{r.operator}</td>
+                  <td className="py-2 pr-4 text-gray-800 dark:text-slate-200">{r.threshold}</td>
+                  <td className="py-2 text-gray-500 dark:text-slate-400">{r.description || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+
       {/* Service Levels card */}
       <Card>
         <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200 mb-3">Service Levels</h2>
