@@ -1,7 +1,5 @@
 # =============================================================
 # Catalog Schema — Data Product Catalog
-# Stores data contracts (as flexible JSONB) and data products
-# that reference those contracts.
 # =============================================================
 
 schema "catalog" {}
@@ -15,9 +13,52 @@ table "data_contracts" {
     default = sql("gen_random_uuid()")
   }
 
-  column "obj" {
-    type = jsonb
-    null = false
+  column "title" {
+    type    = text
+    null    = false
+    default = ""
+  }
+
+  column "version" {
+    type    = text
+    null    = false
+    default = "1.0.0"
+  }
+
+  column "owner" {
+    type    = text
+    null    = false
+    default = ""
+  }
+
+  column "domain" {
+    type    = text
+    null    = false
+    default = ""
+  }
+
+  column "tier" {
+    type    = int
+    null    = false
+    default = 4
+  }
+
+  column "status" {
+    type    = text
+    null    = false
+    default = "draft"
+  }
+
+  column "models" {
+    type    = jsonb
+    null    = false
+    default = sql(`'{"fields":[]}'::jsonb`)
+  }
+
+  column "servicelevels" {
+    type    = jsonb
+    null    = false
+    default = sql(`'{"freshness":"","availability":"","retention":"","latency":""}'::jsonb`)
   }
 
   column "created_at" {
@@ -34,6 +75,14 @@ table "data_contracts" {
 
   primary_key {
     columns = [column.id]
+  }
+
+  check "chk_dc_tier" {
+    expr = "tier BETWEEN 1 AND 4"
+  }
+
+  check "chk_dc_status" {
+    expr = "status IN ('draft','in_review','active','deprecated')"
   }
 }
 

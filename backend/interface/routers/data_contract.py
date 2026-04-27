@@ -1,7 +1,9 @@
 import uuid
 from typing import List
 
+import yaml
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import PlainTextResponse
 
 from backend.domain.entities.data_contract import DataContract
 from backend.domain.entities.user import User
@@ -30,9 +32,40 @@ router = APIRouter()
 def _to_response(contract: DataContract) -> DataContractResponseModel:
     return DataContractResponseModel(
         id=contract.id,
-        obj=contract.obj,
+        title=contract.title,
+        version=contract.version,
+        owner=contract.owner,
+        domain=contract.domain,
+        tier=contract.tier,
+        status=contract.status,
+        models=contract.models,
+        servicelevels=contract.servicelevels,
         created_at=contract.created_at,
         updated_at=contract.updated_at,
+    )
+
+
+def _assemble_yaml(contract: DataContract) -> str:
+    models_data = dict(contract.models)
+    quality_data = models_data.pop("quality", [])
+    payload = {
+        "dataContractSpecification": "0.9.3",
+        "id": str(contract.id),
+        "info": {
+            "title": contract.title,
+            "version": contract.version,
+            "owner": contract.owner,
+            "domain": contract.domain,
+            "status": contract.status,
+        },
+        "models": models_data,
+        "servicelevels": contract.servicelevels,
+        "x-tier": contract.tier,
+    }
+    if quality_data:
+        payload["quality"] = quality_data
+    return yaml.dump(
+        payload, default_flow_style=False, allow_unicode=True, sort_keys=False
     )
 
 
@@ -45,7 +78,16 @@ async def create_data_contract(
     _: User = Depends(get_current_user),
 ):
     try:
-        contract = await use_case.execute(obj=body.obj)
+        contract = await use_case.execute(
+            title=body.title,
+            version=body.version,
+            owner=body.owner,
+            domain=body.domain,
+            tier=body.tier,
+            status=body.status,
+            models=body.models.model_dump(),
+            servicelevels=body.servicelevels.model_dump(),
+        )
         return _to_response(contract)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -58,6 +100,18 @@ async def list_data_contracts(
 ):
     contracts = await use_case.execute()
     return [_to_response(c) for c in contracts]
+
+
+@router.get("/data-contracts/{contract_id}/yaml", response_class=PlainTextResponse)
+async def get_data_contract_yaml(
+    contract_id: uuid.UUID,
+    use_case: GetDataContractUseCase = Depends(get_get_data_contract_use_case),
+    _: User = Depends(get_current_user),
+):
+    contract = await use_case.execute(contract_id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="Data contract not found")
+    return PlainTextResponse(_assemble_yaml(contract), media_type="text/plain")
 
 
 @router.get("/data-contracts/{contract_id}", response_model=DataContractResponseModel)
@@ -79,8 +133,26 @@ async def update_data_contract(
     use_case: UpdateDataContractUseCase = Depends(get_update_data_contract_use_case),
     _: User = Depends(get_current_user),
 ):
+    existing = await GetDataContractUseCase(use_case.repository).execute(contract_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Data contract not found")
+
     try:
-        contract = await use_case.execute(contract_id=contract_id, obj=body.obj)
+        contract = await use_case.execute(
+            contract_id=contract_id,
+            title=body.title if body.title is not None else existing.title,
+            version=body.version if body.version is not None else existing.version,
+            owner=body.owner if body.owner is not None else existing.owner,
+            domain=body.domain if body.domain is not None else existing.domain,
+            tier=body.tier if body.tier is not None else existing.tier,
+            status=body.status if body.status is not None else existing.status,
+            models=body.models.model_dump()
+            if body.models is not None
+            else existing.models,
+            servicelevels=body.servicelevels.model_dump()
+            if body.servicelevels is not None
+            else existing.servicelevels,
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     if not contract:

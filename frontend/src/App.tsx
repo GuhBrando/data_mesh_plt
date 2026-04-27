@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import DataContractsList from './pages/DataContracts'
 import DataContractDetail from './pages/DataContracts/DataContractDetail'
+import NewDataContract from './pages/DataContracts/NewDataContract'
 import DataProductsList from './pages/DataProducts'
 import DataProductDetail from './pages/DataProducts/DataProductDetail'
 import UsersList from './pages/Users'
@@ -21,6 +22,7 @@ export default function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="data-contracts" element={<DataContractsList />} />
+              <Route path="data-contracts/new" element={<NewDataContract />} />
               <Route path="data-contracts/:id" element={<DataContractDetail />} />
               <Route path="data-products" element={<DataProductsList />} />
               <Route path="data-products/:id" element={<DataProductDetail />} />

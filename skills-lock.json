@@ -10,6 +10,11 @@
       "source": "anthropics/skills",
       "sourceType": "github",
       "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+    },
+    "karpathy-guidelines": {
+      "source": "forrestchang/andrej-karpathy-skills",
+      "sourceType": "github",
+      "computedHash": "0ec1641120accbb458780e0bd19a50a4182f2b97863e90851b91307f29802c9f"
     }
   }
 }
