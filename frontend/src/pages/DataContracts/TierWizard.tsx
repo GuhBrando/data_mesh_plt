@@ -48,7 +48,7 @@ export default function TierWizard({ value, onChange }: TierWizardProps) {
   return (
     <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-4 space-y-4">
       <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-        Step 1 — Classify the Tier
+        Classify the Tier
       </h3>
 
       {!done ? (

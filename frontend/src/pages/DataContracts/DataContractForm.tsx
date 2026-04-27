@@ -16,6 +16,9 @@ const tierShowsQuality = (t: number) => t <= 3
 const tierRequiresQuality = (t: number) => t === 1
 const tierRequiresFields = (t: number) => t <= 2
 
+const durationRe = /^\d+(\.\d+)?(s|m|h|d|w|y)$/
+const availabilityRe = /^\d+(\.\d+)?%$/
+
 const schema = z
   .object({
     title: z.string().min(1, 'Title is required'),
@@ -24,10 +27,10 @@ const schema = z
     domain: z.string().min(1, 'Domain is required'),
     tier: z.number().int().min(1).max(4),
     status: z.enum(['draft', 'in_review', 'active', 'deprecated']),
-    freshness: z.string(),
-    availability: z.string(),
-    retention: z.string(),
-    latency: z.string(),
+    freshness: z.string().refine((v) => !v || durationRe.test(v), { message: 'Use a duration like 24h, 7d, 30m' }),
+    availability: z.string().refine((v) => !v || availabilityRe.test(v), { message: 'Use a percentage like 99.9%' }),
+    retention: z.string().refine((v) => !v || durationRe.test(v), { message: 'Use a duration like 365d, 1y' }),
+    latency: z.string().refine((v) => !v || durationRe.test(v), { message: 'Use a duration like 1h, 30m' }),
   })
   .superRefine((data, ctx) => {
     if (data.tier === 1) {
@@ -156,11 +159,9 @@ export default function DataContractForm({
     })
   }
 
-  const stepPrefix = (n: number) => (showWizard ? `Step ${n} — ` : '')
-
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      {/* Step 1 — Tier Wizard (creation only) */}
+      {/* Tier Wizard (creation only) */}
       {showWizard && (
         <Controller
           name="tier"
@@ -182,7 +183,7 @@ export default function DataContractForm({
         <>
           {/* Contract Info */}
           <div className="space-y-3">
-            <SectionHeader label={`${stepPrefix(2)}Contract Info`} />
+            <SectionHeader label={`Contract Info`} />
             <div className="grid grid-cols-2 gap-3">
               <Input label="Title" error={errors.title?.message} {...register('title')} />
               <Input label="Version" error={errors.version?.message} {...register('version')} />
@@ -226,7 +227,7 @@ export default function DataContractForm({
           {/* Schema Fields */}
           <div className="space-y-3">
             <SectionHeader
-              label={`${stepPrefix(3)}Schema Fields`}
+              label={`Schema Fields`}
               required={tierRequiresFields(tier)}
               optional={!tierRequiresFields(tier)}
             />
@@ -238,7 +239,7 @@ export default function DataContractForm({
           {tierShowsSLAs(tier) && (
             <div className="space-y-3">
               <SectionHeader
-                label={`${stepPrefix(4)}Service Levels`}
+                label={`Service Levels`}
                 required={tierRequiresAllSLAs(tier) || tierRequiresFreshnessAvailability(tier)}
                 optional={!tierRequiresAllSLAs(tier) && !tierRequiresFreshnessAvailability(tier)}
               />
@@ -275,7 +276,7 @@ export default function DataContractForm({
           {tierShowsQuality(tier) && (
             <div className="space-y-3">
               <SectionHeader
-                label={`${stepPrefix(5)}Quality Rules`}
+                label={`Quality Rules`}
                 required={tierRequiresQuality(tier)}
                 optional={!tierRequiresQuality(tier)}
               />
