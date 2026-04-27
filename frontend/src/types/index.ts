@@ -1,8 +1,52 @@
+export interface QualityRule {
+  dimension: 'completeness' | 'freshness' | 'uniqueness' | 'validity' | 'integrity'
+  column: string
+  operator: '>=' | '<=' | '='
+  threshold: string
+  description: string
+}
+
+export interface SchemaField {
+  name: string
+  type: 'string' | 'integer' | 'float' | 'boolean' | 'date' | 'timestamp'
+  description: string
+  nullable: boolean
+  primary_key: boolean
+}
+
 export interface DataContract {
   id: string
-  obj: Record<string, unknown>
+  title: string
+  version: string
+  owner: string
+  domain: string
+  tier: 1 | 2 | 3 | 4
+  status: 'draft' | 'in_review' | 'active' | 'deprecated'
+  models: { fields: SchemaField[]; quality?: QualityRule[] }
+  servicelevels: {
+    freshness: string
+    availability: string
+    retention: string
+    latency: string
+  }
   created_at: string
   updated_at: string
+}
+
+export interface DataContractInput {
+  title: string
+  version: string
+  owner: string
+  domain: string
+  tier: number
+  status: string
+  models: { fields: SchemaField[]; quality?: QualityRule[] }
+  servicelevels: {
+    freshness: string
+    availability: string
+    retention: string
+    latency: string
+  }
 }
 
 export interface DataProduct {
@@ -18,12 +62,6 @@ export interface User {
   id: string
   username: string
   email: string
-}
-
-// ---- Form input types ----
-
-export interface DataContractFormData {
-  obj: string // raw JSON textarea, parsed on submit
 }
 
 export interface DataProductFormData {
