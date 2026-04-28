@@ -2,6 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 
 from backend.domain.entities.user import User
+from backend.domain.value_objects.user_role import UserRole
 
 
 class IUserRepository(ABC):
@@ -24,3 +25,6 @@ class IUserRepository(ABC):
 
     @abstractmethod
     async def delete(self, user_id: uuid.UUID) -> bool: ...
+
+    @abstractmethod
+    async def assign_role(self, user_id: uuid.UUID, role: UserRole) -> User | None: ...
