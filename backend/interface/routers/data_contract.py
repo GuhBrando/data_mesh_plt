@@ -15,6 +15,7 @@ from backend.interface.dependencies import (
     get_get_data_contract_use_case,
     get_list_data_contracts_use_case,
     get_remove_stakeholder_use_case,
+    get_stakeholder_repository,
     get_update_data_contract_use_case,
 )
 from backend.interface.permissions import is_domain_member, require_roles
@@ -96,17 +97,12 @@ async def list_data_contracts(
 async def get_data_contract(
     contract_id: uuid.UUID,
     use_case: GetDataContractUseCase = Depends(get_get_data_contract_use_case),
+    stakeholder_repo=Depends(get_stakeholder_repository),
     current_user: User = Depends(get_current_user),
-    db=Depends(get_db_connection),
 ):
     contract = await use_case.execute(contract_id)
     if not contract:
         raise HTTPException(status_code=404, detail="Data contract not found")
-    from backend.infra.repositories.stakeholder_repository import (
-        PostgresStakeholderRepository,
-    )
-
-    stakeholder_repo = PostgresStakeholderRepository(db)
     is_stakeholder = await stakeholder_repo.is_stakeholder(contract_id, current_user.id)
     if current_user.role == UserRole.DATA_CONSUMER and not is_stakeholder:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
