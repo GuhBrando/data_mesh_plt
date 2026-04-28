@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from backend.domain.entities.data_contract import DataContract
@@ -8,7 +9,9 @@ class CreateDataContractUseCase:
     def __init__(self, repository: IDataContractRepository):
         self.repository = repository
 
-    async def execute(self, obj: dict[str, Any]) -> DataContract:
+    async def execute(
+        self, obj: dict[str, Any], domain_id: uuid.UUID | None = None
+    ) -> DataContract:
         if not obj:
             raise ValueError("Data contract obj cannot be empty")
-        return await self.repository.create(obj=obj)
+        return await self.repository.create(obj=obj, domain_id=domain_id)

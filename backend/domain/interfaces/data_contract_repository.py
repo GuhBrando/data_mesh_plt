@@ -7,7 +7,9 @@ from backend.domain.entities.data_contract import DataContract
 
 class IDataContractRepository(ABC):
     @abstractmethod
-    async def create(self, obj: dict[str, Any]) -> DataContract: ...
+    async def create(
+        self, obj: dict[str, Any], domain_id: uuid.UUID | None = None
+    ) -> DataContract: ...
 
     @abstractmethod
     async def get_by_id(self, contract_id: uuid.UUID) -> DataContract | None: ...
