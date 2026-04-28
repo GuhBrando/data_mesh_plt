@@ -18,6 +18,12 @@ _DEFAULT_SERVICELEVELS = {
 }
 
 
+def _parse_json(value) -> dict:
+    if isinstance(value, str):
+        return json.loads(value)
+    return dict(value)
+
+
 def _row_to_contract(row) -> DataContract:
     obj = {
         "title": row["title"],
@@ -26,8 +32,8 @@ def _row_to_contract(row) -> DataContract:
         "domain": row["domain"],
         "tier": row["tier"],
         "status": row["status"],
-        "models": dict(row["models"]),
-        "servicelevels": dict(row["servicelevels"]),
+        "models": _parse_json(row["models"]),
+        "servicelevels": _parse_json(row["servicelevels"]),
     }
     return DataContract(
         id=row["id"],
