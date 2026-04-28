@@ -1,7 +1,8 @@
 -- Add platform role to users (defaults every existing and future user to DATA_CONSUMER)
 ALTER TABLE iam.users
-    ADD COLUMN role TEXT NOT NULL DEFAULT 'DATA_CONSUMER'
-    CHECK (role IN ('PLATFORM_ADMIN', 'DATA_OWNER', 'DATA_STEWARD', 'DATA_CONSUMER'));
+    ADD COLUMN role TEXT NOT NULL DEFAULT 'DATA_CONSUMER',
+    ADD CONSTRAINT users_role_check
+        CHECK (role IN ('PLATFORM_ADMIN', 'DATA_OWNER', 'DATA_STEWARD', 'DATA_CONSUMER'));
 
 -- Associate contracts with a domain (nullable so existing contracts don't break)
 ALTER TABLE catalog.data_contracts
@@ -22,15 +23,16 @@ CREATE INDEX idx_contract_stakeholders_assigned_by ON catalog.contract_stakehold
 CREATE INDEX idx_data_contracts_domain_id ON catalog.data_contracts(domain_id);
 
 -- Grant permissions to app_user
-GRANT SELECT, INSERT, UPDATE, DELETE ON iam.users TO app_user;
+GRANT USAGE ON SCHEMA catalog TO app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA catalog GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON catalog.data_contracts TO app_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON catalog.contract_stakeholders TO app_user;
 
 -- Rollback:
--- DROP TABLE catalog.contract_stakeholders;
+-- DROP TABLE catalog.contract_stakeholders;  -- implicitly drops idx_contract_stakeholders_user_id and idx_contract_stakeholders_assigned_by
 -- DROP INDEX idx_data_contracts_domain_id;
 -- ALTER TABLE catalog.data_contracts DROP COLUMN domain_id;
 -- ALTER TABLE iam.users DROP COLUMN role;
--- REVOKE SELECT, INSERT, UPDATE, DELETE ON iam.users FROM app_user;
 -- REVOKE SELECT, INSERT, UPDATE, DELETE ON catalog.data_contracts FROM app_user;
 -- REVOKE SELECT, INSERT, UPDATE, DELETE ON catalog.contract_stakeholders FROM app_user;
+-- REVOKE USAGE ON SCHEMA catalog FROM app_user;
