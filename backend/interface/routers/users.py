@@ -4,19 +4,24 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.domain.entities.user import User
+from backend.domain.value_objects.user_role import UserRole
 from backend.interface.dependencies import (
+    get_assign_role_use_case,
     get_create_user_use_case,
     get_delete_user_use_case,
     get_get_user_use_case,
     get_list_users_use_case,
     get_update_user_use_case,
 )
+from backend.interface.permissions import require_roles
+from backend.interface.schemas.domain import RoleAssignModel
 from backend.interface.schemas.user import (
     UserCreateModel,
     UserResponseModel,
     UserUpdateModel,
 )
 from backend.interface.security import get_current_user
+from backend.use_cases.user.assign_role import AssignRoleUseCase
 from backend.use_cases.user.create import CreateUserUseCase
 from backend.use_cases.user.delete import DeleteUserUseCase
 from backend.use_cases.user.get import GetUserUseCase
@@ -87,8 +92,23 @@ async def update_user(
 async def delete_user(
     user_id: uuid.UUID,
     use_case: DeleteUserUseCase = Depends(get_delete_user_use_case),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_roles(UserRole.PLATFORM_ADMIN)),
 ):
     deleted = await use_case.execute(user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.patch("/users/{user_id}/role", response_model=UserResponseModel)
+async def assign_user_role(
+    user_id: uuid.UUID,
+    body: RoleAssignModel,
+    use_case: AssignRoleUseCase = Depends(get_assign_role_use_case),
+    _: User = Depends(require_roles(UserRole.PLATFORM_ADMIN)),
+):
+    try:
+        role = UserRole(body.role)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid role: {body.role}")
+    user = await use_case.execute(user_id=user_id, role=role)
+    return _to_response(user)
