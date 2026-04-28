@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from backend.domain.entities.user import User
 from backend.domain.value_objects.user_role import UserRole
+from backend.infra.postgres import get_db_connection
 from backend.interface.dependencies import (
     get_assign_role_use_case,
     get_create_user_use_case,
@@ -14,7 +15,7 @@ from backend.interface.dependencies import (
     get_update_user_use_case,
 )
 from backend.interface.permissions import require_roles
-from backend.interface.schemas.domain import RoleAssignModel
+from backend.interface.schemas.domain import DomainResponseModel, RoleAssignModel
 from backend.interface.schemas.user import (
     UserCreateModel,
     UserResponseModel,
@@ -99,6 +100,27 @@ async def delete_user(
     deleted = await use_case.execute(user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.get("/users/{user_id}/domains", response_model=List[DomainResponseModel])
+async def get_user_domains(
+    user_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db_connection),
+):
+    if current_user.id != user_id and current_user.role != UserRole.PLATFORM_ADMIN:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    rows = await db.fetch(
+        """
+        SELECT p.id, p.name
+        FROM iam.principals p
+        JOIN iam.principal_memberships pm ON pm.principals_id = p.id
+        WHERE pm.users_id = $1 AND p.type = 'GROUP'
+        ORDER BY p.name;
+        """,
+        user_id,
+    )
+    return [DomainResponseModel(id=row["id"], name=row["name"]) for row in rows]
 
 
 @router.patch("/users/{user_id}/role", response_model=UserResponseModel)

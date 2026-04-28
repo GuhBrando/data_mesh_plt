@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import {
   LayoutDashboard,
   FileText,
@@ -71,16 +71,22 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="p-4 border-t border-slate-800">
-        {/* User info */}
+        {/* User info — links to profile */}
         {user && (
-          <div className="flex items-center gap-2 mb-3 px-1">
+          <Link
+            to="/profile"
+            className="flex items-center gap-2 mb-3 px-1 py-1 rounded-lg hover:bg-slate-800 transition-colors group"
+            title="View profile"
+          >
             <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
               <span className="text-white text-xs font-semibold">
                 {user.username.charAt(0).toUpperCase()}
               </span>
             </div>
-            <span className="text-slate-300 text-xs truncate">{user.username}</span>
-          </div>
+            <span className="text-slate-300 text-xs truncate group-hover:text-white">
+              {user.username}
+            </span>
+          </Link>
         )}
 
         <div className="flex items-center justify-between">
