@@ -20,9 +20,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
       if (body?.detail) {
         if (Array.isArray(body.detail)) {
           message = body.detail
-            .map((e: { msg?: string }) =>
-              (e.msg ?? 'Validation error').replace(/^Value error,\s*/i, ''),
-            )
+            .map((e: { msg?: string; loc?: unknown[] }) => {
+              const loc = Array.isArray(e.loc) ? e.loc.slice(1).join('.') : ''
+              const msg = (e.msg ?? 'Validation error').replace(/^Value error,\s*/i, '')
+              return loc ? `${loc}: ${msg}` : msg
+            })
             .join('. ')
         } else if (typeof body.detail === 'string') {
           message = body.detail
@@ -114,4 +116,12 @@ export async function put<T>(path: string, body: unknown): Promise<T> {
 export async function del(path: string): Promise<void> {
   const res = await fetchWithRetry(`${BASE_URL}${path}`, { method: 'DELETE' })
   await handleResponse<void>(res)
+}
+
+export async function getText(path: string): Promise<string> {
+  const res = await fetchWithRetry(`${BASE_URL}${path}`, { method: 'GET' })
+  if (!res.ok) {
+    throw new ApiError(res.status, `HTTP error ${res.status}`)
+  }
+  return res.text()
 }

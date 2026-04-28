@@ -8,7 +8,16 @@ from backend.domain.entities.data_contract import DataContract
 class IDataContractRepository(ABC):
     @abstractmethod
     async def create(
-        self, obj: dict[str, Any], domain_id: uuid.UUID | None = None
+        self,
+        title: str,
+        version: str,
+        owner: str,
+        domain: str,
+        tier: int,
+        status: str,
+        models: dict[str, Any],
+        servicelevels: dict[str, Any],
+        domain_id: uuid.UUID | None = None,
     ) -> DataContract: ...
 
     @abstractmethod
@@ -19,7 +28,16 @@ class IDataContractRepository(ABC):
 
     @abstractmethod
     async def update(
-        self, contract_id: uuid.UUID, obj: dict[str, Any]
+        self,
+        contract_id: uuid.UUID,
+        title: str,
+        version: str,
+        owner: str,
+        domain: str,
+        tier: int,
+        status: str,
+        models: dict[str, Any],
+        servicelevels: dict[str, Any],
     ) -> DataContract | None: ...
 
     @abstractmethod

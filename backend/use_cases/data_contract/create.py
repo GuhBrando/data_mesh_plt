@@ -10,8 +10,27 @@ class CreateDataContractUseCase:
         self.repository = repository
 
     async def execute(
-        self, obj: dict[str, Any], domain_id: uuid.UUID | None = None
+        self,
+        title: str,
+        version: str,
+        owner: str,
+        domain: str,
+        tier: int,
+        status: str,
+        models: dict[str, Any],
+        servicelevels: dict[str, Any],
+        domain_id: uuid.UUID | None = None,
     ) -> DataContract:
-        if not obj:
-            raise ValueError("Data contract obj cannot be empty")
-        return await self.repository.create(obj=obj, domain_id=domain_id)
+        if not title:
+            raise ValueError("Data contract title cannot be empty")
+        return await self.repository.create(
+            title=title,
+            version=version,
+            owner=owner,
+            domain=domain,
+            tier=tier,
+            status=status,
+            models=models,
+            servicelevels=servicelevels,
+            domain_id=domain_id,
+        )
