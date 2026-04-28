@@ -32,7 +32,9 @@ router = APIRouter()
 
 
 def _to_response(user: User) -> UserResponseModel:
-    return UserResponseModel(id=user.id, username=user.name, email=str(user.email))
+    return UserResponseModel(
+        id=user.id, username=user.name, email=str(user.email), role=user.role
+    )
 
 
 @router.post("/users", response_model=UserResponseModel, status_code=201)

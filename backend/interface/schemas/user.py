@@ -31,6 +31,7 @@ class UserResponseModel(BaseModel):
     id: uuid.UUID
     username: str
     email: str
+    role: str
 
 
 class UserUpdateModel(BaseModel):
