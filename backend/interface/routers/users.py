@@ -1,11 +1,13 @@
 import uuid
 from typing import List
 
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.domain.entities.user import User
 from backend.domain.value_objects.user_role import UserRole
 from backend.infra.postgres import get_db_connection
+from backend.infra.repositories.user_repository import PostgresUserRepository
 from backend.interface.dependencies import (
     get_assign_role_use_case,
     get_create_user_use_case,
@@ -13,10 +15,12 @@ from backend.interface.dependencies import (
     get_get_user_use_case,
     get_list_users_use_case,
     get_update_user_use_case,
+    get_user_repository,
 )
 from backend.interface.permissions import require_roles
 from backend.interface.schemas.domain import DomainResponseModel, RoleAssignModel
 from backend.interface.schemas.user import (
+    ChangePasswordModel,
     UserCreateModel,
     UserResponseModel,
     UserUpdateModel,
@@ -121,6 +125,24 @@ async def get_user_domains(
         user_id,
     )
     return [DomainResponseModel(id=row["id"], name=row["name"]) for row in rows]
+
+
+@router.patch("/users/{user_id}/password", status_code=204)
+async def change_password(
+    user_id: uuid.UUID,
+    body: ChangePasswordModel,
+    current_user: User = Depends(get_current_user),
+    repo: PostgresUserRepository = Depends(get_user_repository),
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    user = await repo.get_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not bcrypt.checkpw(body.current_password.encode(), user.password_hash.encode()):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    new_hash = bcrypt.hashpw(body.new_password.encode(), bcrypt.gensalt()).decode()
+    await repo.change_password(user_id, new_hash)
 
 
 @router.patch("/users/{user_id}/role", response_model=UserResponseModel)

@@ -28,3 +28,6 @@ class IUserRepository(ABC):
 
     @abstractmethod
     async def assign_role(self, user_id: uuid.UUID, role: UserRole) -> User | None: ...
+
+    @abstractmethod
+    async def change_password(self, user_id: uuid.UUID, new_hash: str) -> None: ...

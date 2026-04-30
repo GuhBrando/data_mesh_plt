@@ -112,3 +112,10 @@ class PostgresUserRepository(IUserRepository):
                 user_id,
             )
             return _row_to_user(row) if row else None
+
+    async def change_password(self, user_id: uuid.UUID, new_hash: str) -> None:
+        await self.db.execute(
+            "UPDATE iam.users SET password_hash = $1 WHERE id = $2;",
+            new_hash,
+            user_id,
+        )
