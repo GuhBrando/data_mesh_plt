@@ -8,7 +8,11 @@ import tanstackQuery from '@tanstack/eslint-plugin-query'
 export default tseslint.config(
   { ignores: ['dist', 'node_modules', 'coverage', '.stryker-tmp'] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended,
+      ...tanstackQuery.configs['flat/recommended'],
+    ],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
@@ -17,12 +21,10 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'security': security,
-      '@tanstack/query': tanstackQuery,
     },
     rules: {
       ...reactHooks.configs['recommended-latest'].rules,
       ...security.configs.recommended.rules,
-      ...tanstackQuery.configs['flat/recommended'].rules,
       'complexity': ['error', 15],
       'security/detect-object-injection': 'warn',
     },
