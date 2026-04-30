@@ -30,16 +30,19 @@ async def test_assign_role_returns_updated_user():
     updated = User(id=user_id, name="Alice", email=Email("alice@example.com"), role=UserRole.DATA_STEWARD)
     repo = AsyncMock()
     repo.assign_role.return_value = updated
-    use_case = AssignRoleUseCase(repo)
+    token_repo = AsyncMock()
+    use_case = AssignRoleUseCase(repo, token_repo)
     result = await use_case.execute(user_id=user_id, role=UserRole.DATA_STEWARD)
     repo.assign_role.assert_called_once_with(user_id, UserRole.DATA_STEWARD)
+    token_repo.revoke_all_for_user.assert_called_once_with(user_id)
     assert result.role == UserRole.DATA_STEWARD
 
 
 async def test_assign_role_raises_404_when_user_not_found():
     repo = AsyncMock()
     repo.assign_role.return_value = None
-    use_case = AssignRoleUseCase(repo)
+    token_repo = AsyncMock()
+    use_case = AssignRoleUseCase(repo, token_repo)
     with pytest.raises(HTTPException) as exc:
         await use_case.execute(user_id=uuid.uuid4(), role=UserRole.DATA_OWNER)
     assert exc.value.status_code == 404
