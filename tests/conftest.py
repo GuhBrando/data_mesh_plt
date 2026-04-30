@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from unittest.mock import AsyncMock
 
 import pytest
@@ -18,7 +19,7 @@ class _QueryGuard:
 
 
 @pytest.fixture
-def n1_guard():
+def n1_guard() -> Callable[[AsyncMock], _QueryGuard]:
     def _make(mock: AsyncMock) -> _QueryGuard:
         return _QueryGuard(mock)
 

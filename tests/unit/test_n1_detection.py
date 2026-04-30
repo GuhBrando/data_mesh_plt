@@ -12,8 +12,9 @@ async def test_list_data_products_makes_single_db_call(n1_guard):
 
     guard = n1_guard(repo)
     use_case = ListDataProductsUseCase(repository=repo)
-    await use_case.execute()
+    result = await use_case.execute()
 
+    assert result == []
     guard.assert_max_calls("list", max_calls=1)
 
 
