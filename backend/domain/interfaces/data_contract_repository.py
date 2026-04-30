@@ -17,6 +17,7 @@ class IDataContractRepository(ABC):
         status: str,
         models: dict[str, Any],
         servicelevels: dict[str, Any],
+        domain_id: uuid.UUID | None = None,
     ) -> DataContract: ...
 
     @abstractmethod

@@ -17,6 +17,7 @@ class DataContract:
         servicelevels: dict[str, Any],
         created_at: datetime,
         updated_at: datetime,
+        domain_id: uuid.UUID | None = None,
     ):
         self.id = id
         self.title = title
@@ -29,3 +30,4 @@ class DataContract:
         self.servicelevels = servicelevels
         self.created_at = created_at
         self.updated_at = updated_at
+        self.domain_id = domain_id

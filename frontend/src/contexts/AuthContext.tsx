@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { getAccessToken, clearTokens, decodeJwtPayload, isTokenExpired } from '../lib/auth'
 import { get } from '../lib/api'
+import { queryClient } from '../lib/queryClient'
 import type { User } from '../types'
 
 interface AuthContextValue {
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearTokens()
+    queryClient.clear()
     setUser(null)
   }, [])
 

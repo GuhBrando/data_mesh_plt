@@ -60,3 +60,9 @@ class PostgresRefreshTokenRepository(IRefreshTokenRepository):
             "UPDATE iam.refresh_tokens SET revoked = true WHERE id = $1;",
             token_id,
         )
+
+    async def revoke_all_for_user(self, user_id: uuid.UUID) -> None:
+        await self.db.execute(
+            "UPDATE iam.refresh_tokens SET revoked = true WHERE user_id = $1;",
+            user_id,
+        )

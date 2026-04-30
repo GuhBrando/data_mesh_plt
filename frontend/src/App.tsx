@@ -10,6 +10,7 @@ import NewDataContract from './pages/DataContracts/NewDataContract'
 import DataProductsList from './pages/DataProducts'
 import DataProductDetail from './pages/DataProducts/DataProductDetail'
 import UsersList from './pages/Users'
+import Profile from './pages/Profile'
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
               <Route path="data-products" element={<DataProductsList />} />
               <Route path="data-products/:id" element={<DataProductDetail />} />
               <Route path="users" element={<UsersList />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
           </Route>
         </Routes>

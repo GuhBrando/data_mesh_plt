@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from backend.domain.entities.data_contract import DataContract
@@ -18,6 +19,7 @@ class CreateDataContractUseCase:
         status: str,
         models: dict[str, Any],
         servicelevels: dict[str, Any],
+        domain_id: uuid.UUID | None = None,
     ) -> DataContract:
         if not title:
             raise ValueError("Data contract title cannot be empty")
@@ -30,4 +32,5 @@ class CreateDataContractUseCase:
             status=status,
             models=models,
             servicelevels=servicelevels,
+            domain_id=domain_id,
         )
