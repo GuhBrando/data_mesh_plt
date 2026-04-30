@@ -207,8 +207,9 @@ def get_stakeholder_repository(
 
 def get_assign_role_use_case(
     repo=Depends(get_user_repository),
+    token_repo=Depends(get_refresh_token_repository),
 ) -> AssignRoleUseCase:
-    return AssignRoleUseCase(repo)
+    return AssignRoleUseCase(repo, token_repo)
 
 
 # --- Domain use cases ---

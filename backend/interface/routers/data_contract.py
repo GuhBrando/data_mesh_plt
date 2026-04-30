@@ -155,12 +155,13 @@ async def get_data_contract(
     stakeholder_repo=Depends(get_stakeholder_repository),
     current_user: User = Depends(get_current_user),
 ):
+    is_consumer = current_user.role == UserRole.DATA_CONSUMER
+    is_stakeholder = await stakeholder_repo.is_stakeholder(contract_id, current_user.id)
+    if is_consumer and not is_stakeholder:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
     contract = await use_case.execute(contract_id)
     if not contract:
         raise HTTPException(status_code=404, detail="Data contract not found")
-    is_stakeholder = await stakeholder_repo.is_stakeholder(contract_id, current_user.id)
-    if current_user.role == UserRole.DATA_CONSUMER and not is_stakeholder:
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
     return _to_response(contract)
 
 
