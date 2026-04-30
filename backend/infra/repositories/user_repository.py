@@ -5,6 +5,17 @@ import asyncpg
 from backend.domain.entities.user import User
 from backend.domain.interfaces.user_repository import IUserRepository
 from backend.domain.value_objects.email import Email
+from backend.domain.value_objects.user_role import UserRole
+
+
+def _row_to_user(row) -> User:
+    return User(
+        id=row["id"],
+        name=row["name"],
+        email=Email(row["email"]),
+        password_hash=row["password_hash"],
+        role=UserRole(row["role"]),
+    )
 
 
 class PostgresUserRepository(IUserRepository):
@@ -18,62 +29,41 @@ class PostgresUserRepository(IUserRepository):
                     """
                     INSERT INTO iam.users (name, email, password_hash)
                     VALUES ($1, $2, $3)
-                    RETURNING id, name, email, password_hash;
+                    RETURNING id, name, email, password_hash, role;
                     """,
                     name,
                     email,
                     password_hash,
                 )
-                return User(
-                    id=row["id"],
-                    name=row["name"],
-                    email=Email(row["email"]),
-                    password_hash=row["password_hash"],
-                )
+                return _row_to_user(row)
         except asyncpg.UniqueViolationError:
             raise ValueError("Email already in use")
 
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
         row = await self.db.fetchrow(
-            "SELECT id, name, email, password_hash FROM iam.users WHERE id = $1;",
+            """
+            SELECT id, name, email, password_hash, role
+            FROM iam.users WHERE id = $1;
+            """,
             user_id,
         )
-        if row:
-            return User(
-                id=row["id"],
-                name=row["name"],
-                email=Email(row["email"]),
-                password_hash=row["password_hash"],
-            )
-        return None
+        return _row_to_user(row) if row else None
 
     async def get_by_email(self, email: str) -> User | None:
         row = await self.db.fetchrow(
-            "SELECT id, name, email, password_hash FROM iam.users WHERE email = $1;",
+            """
+            SELECT id, name, email, password_hash, role
+            FROM iam.users WHERE email = $1;
+            """,
             email,
         )
-        if row:
-            return User(
-                id=row["id"],
-                name=row["name"],
-                email=Email(row["email"]),
-                password_hash=row["password_hash"],
-            )
-        return None
+        return _row_to_user(row) if row else None
 
     async def list(self) -> list[User]:
         rows = await self.db.fetch(
-            "SELECT id, name, email, password_hash FROM iam.users;"
+            "SELECT id, name, email, password_hash, role FROM iam.users;"
         )
-        return [
-            User(
-                id=r["id"],
-                name=r["name"],
-                email=Email(r["email"]),
-                password_hash=r["password_hash"],
-            )
-            for r in rows
-        ]
+        return [_row_to_user(r) for r in rows]
 
     async def update(
         self, user_id: uuid.UUID, name: str | None, email: str | None
@@ -96,18 +86,11 @@ class PostgresUserRepository(IUserRepository):
                 UPDATE iam.users
                 SET {set_clauses}
                 WHERE id = ${len(values)}
-                RETURNING id, name, email, password_hash;
+                RETURNING id, name, email, password_hash, role;
                 """,
                 *values,
             )
-            if row:
-                return User(
-                    id=row["id"],
-                    name=row["name"],
-                    email=Email(row["email"]),
-                    password_hash=row["password_hash"],
-                )
-            return None
+            return _row_to_user(row) if row else None
 
     async def delete(self, user_id: uuid.UUID) -> bool:
         async with self.db.transaction():
@@ -116,3 +99,23 @@ class PostgresUserRepository(IUserRepository):
                 user_id,
             )
             return result == "DELETE 1"
+
+    async def assign_role(self, user_id: uuid.UUID, role: UserRole) -> User | None:
+        async with self.db.transaction():
+            row = await self.db.fetchrow(
+                """
+                UPDATE iam.users SET role = $1
+                WHERE id = $2
+                RETURNING id, name, email, password_hash, role;
+                """,
+                role.value,
+                user_id,
+            )
+            return _row_to_user(row) if row else None
+
+    async def change_password(self, user_id: uuid.UUID, new_hash: str) -> None:
+        await self.db.execute(
+            "UPDATE iam.users SET password_hash = $1 WHERE id = $2;",
+            new_hash,
+            user_id,
+        )

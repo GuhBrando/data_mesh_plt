@@ -7,8 +7,12 @@ from backend.infra.repositories.data_contract_repository import (
 from backend.infra.repositories.data_product_repository import (
     PostgresDataProductRepository,
 )
+from backend.infra.repositories.domain_repository import PostgresDomainRepository
 from backend.infra.repositories.refresh_token_repository import (
     PostgresRefreshTokenRepository,
+)
+from backend.infra.repositories.stakeholder_repository import (
+    PostgresStakeholderRepository,
 )
 from backend.infra.repositories.user_repository import PostgresUserRepository
 from backend.use_cases.auth.login import LoginUseCase
@@ -24,6 +28,12 @@ from backend.use_cases.data_product.delete import DeleteDataProductUseCase
 from backend.use_cases.data_product.get import GetDataProductUseCase
 from backend.use_cases.data_product.list import ListDataProductsUseCase
 from backend.use_cases.data_product.update import UpdateDataProductUseCase
+from backend.use_cases.domain.add_member import AddDomainMemberUseCase
+from backend.use_cases.domain.create import CreateDomainUseCase
+from backend.use_cases.domain.remove_member import RemoveDomainMemberUseCase
+from backend.use_cases.stakeholder.assign import AssignStakeholderUseCase
+from backend.use_cases.stakeholder.remove import RemoveStakeholderUseCase
+from backend.use_cases.user.assign_role import AssignRoleUseCase
 from backend.use_cases.user.create import CreateUserUseCase
 from backend.use_cases.user.delete import DeleteUserUseCase
 from backend.use_cases.user.get import GetUserUseCase
@@ -174,3 +184,65 @@ def get_logout_use_case(
     token_repo=Depends(get_refresh_token_repository),
 ) -> LogoutUseCase:
     return LogoutUseCase(token_repo=token_repo)
+
+
+# --- Domain repository ---
+
+
+def get_domain_repository(db=Depends(get_db_connection)) -> PostgresDomainRepository:
+    return PostgresDomainRepository(db)
+
+
+# --- Stakeholder repository ---
+
+
+def get_stakeholder_repository(
+    db=Depends(get_db_connection),
+) -> PostgresStakeholderRepository:
+    return PostgresStakeholderRepository(db)
+
+
+# --- Role assignment use case ---
+
+
+def get_assign_role_use_case(
+    repo=Depends(get_user_repository),
+    token_repo=Depends(get_refresh_token_repository),
+) -> AssignRoleUseCase:
+    return AssignRoleUseCase(repo, token_repo)
+
+
+# --- Domain use cases ---
+
+
+def get_create_domain_use_case(
+    repo=Depends(get_domain_repository),
+) -> CreateDomainUseCase:
+    return CreateDomainUseCase(repo)
+
+
+def get_add_domain_member_use_case(
+    repo=Depends(get_domain_repository),
+) -> AddDomainMemberUseCase:
+    return AddDomainMemberUseCase(repo)
+
+
+def get_remove_domain_member_use_case(
+    repo=Depends(get_domain_repository),
+) -> RemoveDomainMemberUseCase:
+    return RemoveDomainMemberUseCase(repo)
+
+
+# --- Stakeholder use cases ---
+
+
+def get_assign_stakeholder_use_case(
+    repo=Depends(get_stakeholder_repository),
+) -> AssignStakeholderUseCase:
+    return AssignStakeholderUseCase(repo)
+
+
+def get_remove_stakeholder_use_case(
+    repo=Depends(get_stakeholder_repository),
+) -> RemoveStakeholderUseCase:
+    return RemoveStakeholderUseCase(repo)

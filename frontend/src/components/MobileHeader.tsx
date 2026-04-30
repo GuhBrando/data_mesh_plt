@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Database, Sun, Moon, LogOut } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -35,14 +36,18 @@ export default function MobileHeader() {
       {/* Right side: user + theme + logout */}
       <div className="flex items-center gap-1">
         {user && (
-          <div className="flex items-center gap-1.5 mr-1">
+          <Link
+            to="/profile"
+            className="flex items-center gap-1.5 mr-1 py-1 px-1 rounded-lg hover:bg-slate-800 transition-colors"
+            title="View profile"
+          >
             <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
               <span className="text-white text-xs font-semibold">
                 {user.username.charAt(0).toUpperCase()}
               </span>
             </div>
             <span className="text-slate-300 text-xs max-w-[80px] truncate">{user.username}</span>
-          </div>
+          </Link>
         )}
 
         <button

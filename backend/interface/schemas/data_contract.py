@@ -44,6 +44,7 @@ class DataContractCreateModel(BaseModel):
     status: Literal["draft", "in_review", "active", "deprecated"] = "draft"
     models: ModelsSection = Field(default_factory=ModelsSection)
     servicelevels: ServiceLevels = Field(default_factory=ServiceLevels)
+    domain_id: uuid.UUID | None = None
 
 
 class DataContractUpdateModel(BaseModel):
@@ -67,5 +68,6 @@ class DataContractResponseModel(BaseModel):
     status: str
     models: dict[str, Any]
     servicelevels: dict[str, Any]
+    domain_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
