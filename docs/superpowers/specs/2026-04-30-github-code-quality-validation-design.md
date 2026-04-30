@@ -140,7 +140,7 @@ rules: {
   "react-hooks/rules-of-hooks": "error",
   "react-hooks/exhaustive-deps": "warn",
   "security/detect-non-literal-regexp": "error",
-  "security/detect-object-injection": "error",
+  "security/detect-object-injection": "warn",  // TypeScript typed access produces false positives at error level
   "security/detect-possible-timing-attacks": "error",
 }
 ```
