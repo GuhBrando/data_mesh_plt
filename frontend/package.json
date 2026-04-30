@@ -24,8 +24,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
-    "@stryker-mutator/core": "^8.6.0",
-    "@stryker-mutator/vitest-runner": "^8.6.0",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
     "@tanstack/eslint-plugin-query": "^5.62.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
