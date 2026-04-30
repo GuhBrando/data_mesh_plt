@@ -150,9 +150,8 @@ jobs:
 
       - name: Check mutation score threshold
         run: |
-          RESULT=$(uv run mutmut results 2>/dev/null || echo "")
-          KILLED=$(echo "$RESULT" | grep -oP '(?<=Killed: )\d+' | head -1 || echo "0")
-          SURVIVED=$(echo "$RESULT" | grep -oP '(?<=Survived: )\d+' | head -1 || echo "0")
+          KILLED=$(uv run mutmut result-ids killed 2>/dev/null | wc -w | tr -d ' ')
+          SURVIVED=$(uv run mutmut result-ids survived 2>/dev/null | wc -w | tr -d ' ')
           TOTAL=$((KILLED + SURVIVED))
           if [ "$TOTAL" -eq 0 ]; then
             echo "ERROR: No mutants were generated"
