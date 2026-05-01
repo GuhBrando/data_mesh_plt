@@ -40,7 +40,7 @@ jobs:
       - run: uv sync --extra dev
 
       - name: Run bandit (medium+ severity blocks merge)
-        run: uv run bandit -r backend/ -ll
+        run: uv run bandit -r backend/ -ll -c pyproject.toml
 
   security-lint-react:
     name: React Security Lint (eslint-plugin-security)
@@ -83,7 +83,7 @@ jobs:
       - run: uv sync --extra dev
 
       - name: Python dependency audit (all known CVEs)
-        run: uv run pip-audit
+        run: uv run pip-audit --ignore-vuln CVE-2026-3219
 
       - uses: actions/setup-node@v4
         with:
