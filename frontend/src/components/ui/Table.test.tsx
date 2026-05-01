@@ -56,4 +56,106 @@ describe('Table', () => {
     fireEvent.click(cards[0])
     expect(handleClick).toHaveBeenCalledWith(data[0])
   })
+
+  it('fires onRowClick when a table row is clicked (no mobileCardConfig)', () => {
+    const handleClick = vi.fn()
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        onRowClick={handleClick}
+      />
+    )
+    // rows[0] is the header row, rows[1] is the first data row
+    const rows = screen.getAllByRole('row')
+    fireEvent.click(rows[1])
+    expect(handleClick).toHaveBeenCalledWith(data[0])
+  })
+
+  it('renders badge column when mobileCardConfig includes badgeKey', () => {
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        mobileCardConfig={{ titleKey: 'name', badgeKey: 'email' }}
+      />
+    )
+    expect(screen.getAllByTestId('mobile-card')).toHaveLength(2)
+  })
+
+  it('fires onRowClick on Enter key in mobile card', () => {
+    const handleClick = vi.fn()
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        onRowClick={handleClick}
+        mobileCardConfig={{ titleKey: 'name' }}
+      />
+    )
+    const cards = screen.getAllByTestId('mobile-card')
+    fireEvent.keyDown(cards[0], { key: 'Enter' })
+    expect(handleClick).toHaveBeenCalledWith(data[0])
+  })
+
+  it('fires onRowClick on Space key in mobile card', () => {
+    const handleClick = vi.fn()
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        onRowClick={handleClick}
+        mobileCardConfig={{ titleKey: 'name' }}
+      />
+    )
+    const cards = screen.getAllByTestId('mobile-card')
+    fireEvent.keyDown(cards[0], { key: ' ' })
+    expect(handleClick).toHaveBeenCalledWith(data[0])
+  })
+
+  it('ignores non-Enter/Space keys in mobile card', () => {
+    const handleClick = vi.fn()
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        onRowClick={handleClick}
+        mobileCardConfig={{ titleKey: 'name' }}
+      />
+    )
+    const cards = screen.getAllByTestId('mobile-card')
+    fireEvent.keyDown(cards[0], { key: 'Tab' })
+    expect(handleClick).not.toHaveBeenCalled()
+  })
+
+  it('renders empty state message in table when data is empty', () => {
+    render(
+      <Table
+        columns={columns}
+        data={[]}
+        keyExtractor={(r) => r.name}
+        emptyMessage="Nothing here"
+      />
+    )
+    expect(screen.getByText('Nothing here')).toBeInTheDocument()
+  })
+
+  it('renders empty state message in cards when data is empty with mobileCardConfig', () => {
+    render(
+      <Table
+        columns={columns}
+        data={[]}
+        keyExtractor={(r) => r.name}
+        emptyMessage="No records"
+        mobileCardConfig={{ titleKey: 'name' }}
+      />
+    )
+    // Appears once in table, once in card list
+    expect(screen.getAllByText('No records')).toHaveLength(2)
+  })
 })

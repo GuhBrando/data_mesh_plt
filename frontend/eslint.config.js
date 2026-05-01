@@ -26,7 +26,8 @@ export default tseslint.config(
       ...reactHooks.configs['recommended-latest'].rules,
       ...security.configs.recommended.rules,
       'complexity': ['error', 15],
-      'security/detect-object-injection': 'warn',
+      // TypeScript's type system makes this rule a false positive for typed Record access
+      'security/detect-object-injection': 'off',
     },
   },
 )

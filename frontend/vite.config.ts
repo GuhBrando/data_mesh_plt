@@ -22,6 +22,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
+    exclude: ['**/node_modules/**', '**/.stryker-tmp/**'],
     coverage: {
       provider: 'v8',
       thresholds: {
@@ -36,6 +37,7 @@ export default defineConfig({
         'src/**/*.test.{ts,tsx}',
         'src/main.tsx',
         'node_modules/**',
+        '.stryker-tmp/**',
       ],
     },
   },
