@@ -49,3 +49,12 @@ async def test_remove_stakeholder_succeeds():
     use_case = RemoveStakeholderUseCase(repo)
     await use_case.execute(contract_id=uuid.uuid4(), user_id=uuid.uuid4())
     repo.remove.assert_called_once()
+
+
+async def test_remove_stakeholder_passes_correct_ids_to_repo():
+    contract_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    repo = AsyncMock()
+    repo.remove.return_value = True
+    await RemoveStakeholderUseCase(repo).execute(contract_id=contract_id, user_id=user_id)
+    repo.remove.assert_called_once_with(contract_id, user_id)

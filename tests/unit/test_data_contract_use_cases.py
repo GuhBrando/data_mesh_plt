@@ -73,3 +73,41 @@ async def test_update_calls_repository():
 
     repo.update.assert_called_once()
     assert result.title == "Updated"
+
+
+@pytest.mark.asyncio
+async def test_update_raises_on_empty_title():
+    repo = AsyncMock()
+    use_case = UpdateDataContractUseCase(repo)
+    with pytest.raises(ValueError, match="title"):
+        await use_case.execute(
+            contract_id=uuid.uuid4(),
+            title="", version="1.0.0", owner="alice", domain="commerce",
+            tier=2, status="draft", models={"fields": []},
+            servicelevels={"freshness": "", "availability": "", "retention": "", "latency": ""},
+        )
+
+
+@pytest.mark.asyncio
+async def test_create_passes_title_to_repo():
+    repo = AsyncMock()
+    repo.create.return_value = make_contract(title="Inventory")
+    await CreateDataContractUseCase(repo).execute(
+        title="Inventory", version="1.0.0", owner="alice", domain="ops",
+        tier=3, status="draft", models={"fields": []},
+        servicelevels={"freshness": "", "availability": "", "retention": "", "latency": ""},
+    )
+    assert repo.create.call_args.kwargs["title"] == "Inventory"
+
+
+@pytest.mark.asyncio
+async def test_update_passes_title_to_repo():
+    repo = AsyncMock()
+    repo.update.return_value = make_contract(title="NewName")
+    await UpdateDataContractUseCase(repo).execute(
+        contract_id=uuid.uuid4(),
+        title="NewName", version="1.0.0", owner="bob", domain="finance",
+        tier=2, status="draft", models={"fields": []},
+        servicelevels={"freshness": "", "availability": "", "retention": "", "latency": ""},
+    )
+    assert repo.update.call_args.kwargs["title"] == "NewName"
