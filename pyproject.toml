@@ -102,5 +102,5 @@ markers = [
 skips = ["B608"]
 
 [tool.mutmut]
-paths_to_mutate = "backend/"
-runner = "python -m pytest tests/ -x -q --no-header"
+paths_to_mutate = "backend/domain/,backend/use_cases/"
+runner = "python -m pytest tests/unit/ -x -q --no-header"

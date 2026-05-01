@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import Table from './Table'
 
@@ -157,5 +157,99 @@ describe('Table', () => {
     )
     // Appears once in table, once in card list
     expect(screen.getAllByText('No records')).toHaveLength(2)
+  })
+
+  it('uses "No records found." as default empty message', () => {
+    render(<Table columns={columns} data={[]} keyExtractor={(r) => r.name} />)
+    expect(screen.getByText('No records found.')).toBeInTheDocument()
+  })
+
+  it('mobile cards have no role or tabIndex when onRowClick is absent', () => {
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        mobileCardConfig={{ titleKey: 'name' }}
+      />
+    )
+    const cards = screen.getAllByTestId('mobile-card')
+    expect(cards[0]).not.toHaveAttribute('role')
+    expect(cards[0]).not.toHaveAttribute('tabIndex')
+  })
+
+  it('renders action columns (empty header) at bottom of mobile cards', () => {
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        mobileCardConfig={{ titleKey: 'name' }}
+      />
+    )
+    const cards = screen.getAllByTestId('mobile-card')
+    // 'actions' column has header='' → rendered as action, not body
+    expect(within(cards[0]).getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+  })
+
+  it('renders body column header labels inside mobile cards', () => {
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        mobileCardConfig={{ titleKey: 'name' }}
+      />
+    )
+    const cards = screen.getAllByTestId('mobile-card')
+    // 'email' has header='Email' → body grid label appears in card
+    expect(within(cards[0]).getByText('Email')).toBeInTheDocument()
+  })
+
+  it('excludes title column from body grid in mobile cards', () => {
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        mobileCardConfig={{ titleKey: 'name' }}
+      />
+    )
+    const cards = screen.getAllByTestId('mobile-card')
+    // 'Name' is the titleKey — its header label must NOT appear in the body grid
+    expect(within(cards[0]).queryByText('Name')).not.toBeInTheDocument()
+  })
+
+  it('excludes badgeKey column from body grid in mobile cards', () => {
+    render(
+      <Table
+        columns={columns}
+        data={data}
+        keyExtractor={(r) => r.name}
+        mobileCardConfig={{ titleKey: 'name', badgeKey: 'email' }}
+      />
+    )
+    const cards = screen.getAllByTestId('mobile-card')
+    // 'email' is now the badgeKey — its header 'Email' must NOT appear in body grid
+    expect(within(cards[0]).queryByText('Email')).not.toBeInTheDocument()
+  })
+
+  it('shows no body grid labels when all columns are title or action', () => {
+    const minCols = [
+      { key: 'id', header: 'ID', render: (r: { id: string }) => <span>{r.id}</span> },
+      { key: 'del', header: '', render: () => <button>Del</button> },
+    ]
+    render(
+      <Table
+        columns={minCols}
+        data={[{ id: '1' }]}
+        keyExtractor={(r) => r.id}
+        mobileCardConfig={{ titleKey: 'id' }}
+      />
+    )
+    const cards = screen.getAllByTestId('mobile-card')
+    // 'id' is titleKey (excluded from body) and 'del' has empty header (action)
+    // So bodyColumns is empty — 'ID' header label must not appear in body grid
+    expect(within(cards[0]).queryByText('ID')).not.toBeInTheDocument()
   })
 })

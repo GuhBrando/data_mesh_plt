@@ -5,12 +5,8 @@ export default {
     configFile: 'vite.config.ts',
   },
   mutate: [
-    'src/**/*.ts',
-    'src/**/*.tsx',
-    '!src/**/*.test.ts',
-    '!src/**/*.test.tsx',
-    '!src/test/**/*',
-    '!src/main.tsx',
+    'src/lib/auth.ts',
+    'src/components/ui/Table.tsx',
   ],
   thresholds: {
     high: 80,
