@@ -212,3 +212,6 @@ database/data
 
 settings.local.json
 .superpowers
+
+# Stryker mutation testing
+frontend/.stryker-tmp/

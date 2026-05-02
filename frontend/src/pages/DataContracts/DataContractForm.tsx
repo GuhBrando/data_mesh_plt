@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
+import type { UseFormRegister, FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Button from '../../components/ui/Button'
@@ -16,8 +17,18 @@ const tierShowsQuality = (t: number) => t <= 3
 const tierRequiresQuality = (t: number) => t === 1
 const tierRequiresFields = (t: number) => t <= 2
 
-const durationRe = /^\d+(\.\d+)?(s|m|h|d|w|y)$/
-const availabilityRe = /^\d+(\.\d+)?%$/
+const DURATION_UNITS = new Set(['s', 'm', 'h', 'd', 'w', 'y'])
+function isValidDuration(v: string): boolean {
+  if (!v) return true
+  const unit = v.at(-1) ?? ''
+  if (!DURATION_UNITS.has(unit)) return false
+  return Number.isFinite(Number(v.slice(0, -1)))
+}
+function isValidAvailability(v: string): boolean {
+  if (!v) return true
+  if (!v.endsWith('%')) return false
+  return Number.isFinite(Number(v.slice(0, -1)))
+}
 
 const schema = z
   .object({
@@ -27,10 +38,10 @@ const schema = z
     domain: z.string().min(1, 'Domain is required'),
     tier: z.number().int().min(1).max(4),
     status: z.enum(['draft', 'in_review', 'active', 'deprecated']),
-    freshness: z.string().refine((v) => !v || durationRe.test(v), { message: 'Use a duration like 24h, 7d, 30m' }),
-    availability: z.string().refine((v) => !v || availabilityRe.test(v), { message: 'Use a percentage like 99.9%' }),
-    retention: z.string().refine((v) => !v || durationRe.test(v), { message: 'Use a duration like 365d, 1y' }),
-    latency: z.string().refine((v) => !v || durationRe.test(v), { message: 'Use a duration like 1h, 30m' }),
+    freshness: z.string().refine(isValidDuration, { message: 'Use a duration like 24h, 7d, 30m' }),
+    availability: z.string().refine(isValidAvailability, { message: 'Use a percentage like 99.9%' }),
+    retention: z.string().refine(isValidDuration, { message: 'Use a duration like 365d, 1y' }),
+    latency: z.string().refine(isValidDuration, { message: 'Use a duration like 1h, 30m' }),
   })
   .superRefine((data, ctx) => {
     if (data.tier === 1) {
@@ -53,6 +64,55 @@ interface DataContractFormProps {
   onCancel: () => void
   isSubmitting: boolean
   showWizard?: boolean
+}
+
+function normalizeDefaults(v?: DataContract): FormValues {
+  if (!v) {
+    return {
+      title: '', version: '1.0.0', owner: '', domain: '',
+      tier: 4, status: 'draft',
+      freshness: '', availability: '', retention: '', latency: '',
+    }
+  }
+  return {
+    title: v.title, version: v.version, owner: v.owner, domain: v.domain,
+    tier: v.tier, status: v.status,
+    freshness: v.servicelevels.freshness, availability: v.servicelevels.availability,
+    retention: v.servicelevels.retention, latency: v.servicelevels.latency,
+  }
+}
+
+function getInitialFields(v?: DataContract): SchemaField[] {
+  if (!v) return []
+  return v.models.fields
+}
+
+function getInitialQuality(v?: DataContract): QualityRule[] {
+  if (!v) return []
+  return v.models.quality ?? []
+}
+
+function validateFormArrays(
+  tier: number,
+  fields: SchemaField[],
+  quality: QualityRule[],
+  setFieldsError: (e: string | null) => void,
+  setQualityError: (e: string | null) => void,
+): boolean {
+  let valid = true
+  if (tierRequiresFields(tier) && fields.length === 0) {
+    setFieldsError(`At least one schema field is required for Tier ${tier}`)
+    valid = false
+  } else {
+    setFieldsError(null)
+  }
+  if (tierRequiresQuality(tier) && quality.length === 0) {
+    setQualityError('At least one quality rule is required for Tier 1')
+    valid = false
+  } else {
+    setQualityError(null)
+  }
+  return valid
 }
 
 function SectionHeader({
@@ -81,6 +141,81 @@ function SectionHeader({
   )
 }
 
+function ServiceLevelsSection({
+  tier,
+  register,
+  errors,
+}: {
+  tier: number
+  register: UseFormRegister<FormValues>
+  errors: FieldErrors<FormValues>
+}) {
+  const needsAll = tierRequiresAllSLAs(tier)
+  const needsFreshAvail = needsAll || tierRequiresFreshnessAvailability(tier)
+  return (
+    <div className="space-y-3">
+      <SectionHeader
+        label="Service Levels"
+        required={needsFreshAvail}
+        optional={!needsFreshAvail}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          label={`Freshness${needsFreshAvail ? ' *' : ''}`}
+          placeholder="e.g. 24h"
+          error={errors.freshness?.message}
+          {...register('freshness')}
+        />
+        <Input
+          label={`Availability${needsFreshAvail ? ' *' : ''}`}
+          placeholder="e.g. 99.9%"
+          error={errors.availability?.message}
+          {...register('availability')}
+        />
+        <Input
+          label={`Retention${needsAll ? ' *' : ''}`}
+          placeholder="e.g. 365d"
+          error={errors.retention?.message}
+          {...register('retention')}
+        />
+        <Input
+          label={`Latency${needsAll ? ' *' : ''}`}
+          placeholder="e.g. 1h"
+          error={errors.latency?.message}
+          {...register('latency')}
+        />
+      </div>
+    </div>
+  )
+}
+
+function QualitySection({
+  tier,
+  quality,
+  onChange,
+  error,
+}: {
+  tier: number
+  quality: QualityRule[]
+  onChange: (rules: QualityRule[]) => void
+  error: string | null
+}) {
+  return (
+    <div className="space-y-3">
+      <SectionHeader
+        label="Quality Rules"
+        required={tierRequiresQuality(tier)}
+        optional={!tierRequiresQuality(tier)}
+      />
+      <p className="text-xs text-gray-400 dark:text-slate-500">
+        dimension · column (opt.) · operator · threshold · description
+      </p>
+      <QualityRules rules={quality} onChange={onChange} />
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    </div>
+  )
+}
+
 export default function DataContractForm({
   defaultValues,
   onSubmit,
@@ -89,8 +224,8 @@ export default function DataContractForm({
   showWizard = false,
 }: DataContractFormProps) {
   const [tierDone, setTierDone] = useState(!showWizard)
-  const [fields, setFields] = useState<SchemaField[]>(defaultValues?.models?.fields ?? [])
-  const [quality, setQuality] = useState<QualityRule[]>(defaultValues?.models?.quality ?? [])
+  const [fields, setFields] = useState<SchemaField[]>(getInitialFields(defaultValues))
+  const [quality, setQuality] = useState<QualityRule[]>(getInitialQuality(defaultValues))
   const [fieldsError, setFieldsError] = useState<string | null>(null)
   const [qualityError, setQualityError] = useState<string | null>(null)
 
@@ -102,40 +237,13 @@ export default function DataContractForm({
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      title: defaultValues?.title ?? '',
-      version: defaultValues?.version ?? '1.0.0',
-      owner: defaultValues?.owner ?? '',
-      domain: defaultValues?.domain ?? '',
-      tier: defaultValues?.tier ?? 4,
-      status: defaultValues?.status ?? 'draft',
-      freshness: defaultValues?.servicelevels?.freshness ?? '',
-      availability: defaultValues?.servicelevels?.availability ?? '',
-      retention: defaultValues?.servicelevels?.retention ?? '',
-      latency: defaultValues?.servicelevels?.latency ?? '',
-    },
+    defaultValues: normalizeDefaults(defaultValues),
   })
 
   const tier = watch('tier')
 
   const handleFormSubmit = (values: FormValues) => {
-    let valid = true
-
-    if (tierRequiresFields(values.tier) && fields.length === 0) {
-      setFieldsError(`At least one schema field is required for Tier ${values.tier}`)
-      valid = false
-    } else {
-      setFieldsError(null)
-    }
-
-    if (tierRequiresQuality(values.tier) && quality.length === 0) {
-      setQualityError('At least one quality rule is required for Tier 1')
-      valid = false
-    } else {
-      setQualityError(null)
-    }
-
-    if (!valid) return
+    if (!validateFormArrays(values.tier, fields, quality, setFieldsError, setQualityError)) return
 
     onSubmit({
       title: values.title,
@@ -161,7 +269,6 @@ export default function DataContractForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      {/* Tier Wizard (creation only) */}
       {showWizard && (
         <Controller
           name="tier"
@@ -178,12 +285,10 @@ export default function DataContractForm({
         />
       )}
 
-      {/* Rest of form — revealed after tier is assigned */}
       {tierDone && (
         <>
-          {/* Contract Info */}
           <div className="space-y-3">
-            <SectionHeader label={`Contract Info`} />
+            <SectionHeader label="Contract Info" />
             <div className="grid grid-cols-2 gap-3">
               <Input label="Title" error={errors.title?.message} {...register('title')} />
               <Input label="Version" error={errors.version?.message} {...register('version')} />
@@ -224,10 +329,9 @@ export default function DataContractForm({
             </div>
           </div>
 
-          {/* Schema Fields */}
           <div className="space-y-3">
             <SectionHeader
-              label={`Schema Fields`}
+              label="Schema Fields"
               required={tierRequiresFields(tier)}
               optional={!tierRequiresFields(tier)}
             />
@@ -235,57 +339,17 @@ export default function DataContractForm({
             {fieldsError && <p className="text-xs text-red-500 mt-1">{fieldsError}</p>}
           </div>
 
-          {/* Service Levels — hidden for Tier 4 */}
           {tierShowsSLAs(tier) && (
-            <div className="space-y-3">
-              <SectionHeader
-                label={`Service Levels`}
-                required={tierRequiresAllSLAs(tier) || tierRequiresFreshnessAvailability(tier)}
-                optional={!tierRequiresAllSLAs(tier) && !tierRequiresFreshnessAvailability(tier)}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label={`Freshness${tierRequiresAllSLAs(tier) || tierRequiresFreshnessAvailability(tier) ? ' *' : ''}`}
-                  placeholder="e.g. 24h"
-                  error={errors.freshness?.message}
-                  {...register('freshness')}
-                />
-                <Input
-                  label={`Availability${tierRequiresAllSLAs(tier) || tierRequiresFreshnessAvailability(tier) ? ' *' : ''}`}
-                  placeholder="e.g. 99.9%"
-                  error={errors.availability?.message}
-                  {...register('availability')}
-                />
-                <Input
-                  label={`Retention${tierRequiresAllSLAs(tier) ? ' *' : ''}`}
-                  placeholder="e.g. 365d"
-                  error={errors.retention?.message}
-                  {...register('retention')}
-                />
-                <Input
-                  label={`Latency${tierRequiresAllSLAs(tier) ? ' *' : ''}`}
-                  placeholder="e.g. 1h"
-                  error={errors.latency?.message}
-                  {...register('latency')}
-                />
-              </div>
-            </div>
+            <ServiceLevelsSection tier={tier} register={register} errors={errors} />
           )}
 
-          {/* Quality Rules — hidden for Tier 4 */}
           {tierShowsQuality(tier) && (
-            <div className="space-y-3">
-              <SectionHeader
-                label={`Quality Rules`}
-                required={tierRequiresQuality(tier)}
-                optional={!tierRequiresQuality(tier)}
-              />
-              <p className="text-xs text-gray-400 dark:text-slate-500">
-                dimension · column (opt.) · operator · threshold · description
-              </p>
-              <QualityRules rules={quality} onChange={setQuality} />
-              {qualityError && <p className="text-xs text-red-500 mt-1">{qualityError}</p>}
-            </div>
+            <QualitySection
+              tier={tier}
+              quality={quality}
+              onChange={setQuality}
+              error={qualityError}
+            />
           )}
 
           <div className="flex justify-end gap-3 pt-2 border-t border-gray-200 dark:border-slate-700">
@@ -299,7 +363,6 @@ export default function DataContractForm({
         </>
       )}
 
-      {/* Wizard shown but not yet done — only show Cancel */}
       {showWizard && !tierDone && (
         <div className="flex justify-end pt-2">
           <Button type="button" variant="secondary" onClick={onCancel}>

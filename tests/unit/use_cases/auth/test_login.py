@@ -1,3 +1,4 @@
+import hashlib
 import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock
@@ -56,3 +57,18 @@ async def test_login_raises_401_on_unknown_email():
         await use_case.execute(email="nobody@example.com", password="Str0ng!Pass")
     assert exc.value.status_code == 401
     assert exc.value.detail == "Invalid credentials"
+
+
+async def test_login_stores_hashed_refresh_token_in_repo():
+    user = _make_user("Str0ng!Pass")
+    user_repo = AsyncMock()
+    user_repo.get_by_email.return_value = user
+    token_repo = _make_token_repo()
+    result = await LoginUseCase(user_repo=user_repo, token_repo=token_repo).execute(
+        email="alice@example.com", password="Str0ng!Pass"
+    )
+    token_repo.create.assert_awaited_once()
+    kwargs = token_repo.create.call_args.kwargs
+    expected_hash = hashlib.sha256(result["refresh_token"].encode()).hexdigest()
+    assert kwargs["token_hash"] == expected_hash
+    assert kwargs["user_id"] == user.id

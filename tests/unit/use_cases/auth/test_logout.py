@@ -1,6 +1,7 @@
 import uuid
 from unittest.mock import AsyncMock
 
+import jwt
 import pytest
 from fastapi import HTTPException
 
@@ -22,4 +23,13 @@ async def test_logout_raises_401_on_invalid_token():
     token_repo = AsyncMock()
     with pytest.raises(HTTPException) as exc:
         await LogoutUseCase(token_repo=token_repo, secret_key=SECRET).execute(refresh_token="not.a.valid.token")
+    assert exc.value.status_code == 401
+
+
+async def test_logout_raises_401_when_token_has_no_jti():
+    # Valid JWT signature but no jti claim — tests the `if not jti:` guard
+    token_without_jti = jwt.encode({"sub": "user-1"}, SECRET, algorithm="HS256")
+    token_repo = AsyncMock()
+    with pytest.raises(HTTPException) as exc:
+        await LogoutUseCase(token_repo=token_repo, secret_key=SECRET).execute(refresh_token=token_without_jti)
     assert exc.value.status_code == 401
