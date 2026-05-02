@@ -16,6 +16,15 @@ async def test_add_member_calls_repo():
     repo.add_member.assert_called_once()
 
 
+async def test_add_member_passes_correct_ids_to_repo():
+    domain_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    repo = AsyncMock()
+    repo.get_by_id.return_value = object()
+    await AddDomainMemberUseCase(repo).execute(domain_id=domain_id, user_id=user_id)
+    repo.add_member.assert_called_once_with(domain_id=domain_id, user_id=user_id)
+
+
 async def test_add_member_raises_404_when_domain_not_found():
     repo = AsyncMock()
     repo.get_by_id.return_value = None

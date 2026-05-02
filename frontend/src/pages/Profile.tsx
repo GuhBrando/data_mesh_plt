@@ -140,12 +140,46 @@ function RoleSection({ userId }: { userId: string | undefined }) {
   )
 }
 
+function ShowablePasswordInput({
+  label,
+  value,
+  onChange,
+  error,
+  autoComplete,
+}: {
+  label: string
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  error?: string
+  autoComplete?: string
+}) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="relative">
+      <Input
+        label={label}
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        error={error}
+        autoComplete={autoComplete}
+      />
+      <button
+        type="button"
+        onClick={() => setShow((v) => !v)}
+        className="absolute right-3 top-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+        tabIndex={-1}
+      >
+        {show ? <EyeOff size={15} /> : <Eye size={15} />}
+      </button>
+    </div>
+  )
+}
+
 function PasswordSection({ userId }: { userId: string }) {
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [showCurrent, setShowCurrent] = useState(false)
-  const [showNext, setShowNext] = useState(false)
   const [success, setSuccess] = useState(false)
 
   const mutation = useChangePassword(userId)
@@ -190,42 +224,20 @@ function PasswordSection({ userId }: { userId: string }) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="relative">
-          <Input
-            label="Current password"
-            type={showCurrent ? 'text' : 'password'}
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-            autoComplete="current-password"
-          />
-          <button
-            type="button"
-            onClick={() => setShowCurrent((v) => !v)}
-            className="absolute right-3 top-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            tabIndex={-1}
-          >
-            {showCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
-          </button>
-        </div>
+        <ShowablePasswordInput
+          label="Current password"
+          value={current}
+          onChange={(e) => setCurrent(e.target.value)}
+          autoComplete="current-password"
+        />
 
-        <div className="relative">
-          <Input
-            label="New password"
-            type={showNext ? 'text' : 'password'}
-            value={next}
-            onChange={(e) => setNext(e.target.value)}
-            error={policyError ?? undefined}
-            autoComplete="new-password"
-          />
-          <button
-            type="button"
-            onClick={() => setShowNext((v) => !v)}
-            className="absolute right-3 top-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            tabIndex={-1}
-          >
-            {showNext ? <EyeOff size={15} /> : <Eye size={15} />}
-          </button>
-        </div>
+        <ShowablePasswordInput
+          label="New password"
+          value={next}
+          onChange={(e) => setNext(e.target.value)}
+          error={policyError ?? undefined}
+          autoComplete="new-password"
+        />
 
         <Input
           label="Confirm new password"

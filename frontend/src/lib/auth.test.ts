@@ -29,6 +29,31 @@ describe('token storage', () => {
     expect(getAccessToken()).toBeNull()
     expect(getRefreshToken()).toBeNull()
   })
+
+  it('stores access token under the "access_token" localStorage key', () => {
+    setTokens('myacc', 'myref')
+    expect(localStorage.getItem('access_token')).toBe('myacc')
+  })
+
+  it('stores refresh token under the "refresh_token" localStorage key', () => {
+    setTokens('myacc', 'myref')
+    expect(localStorage.getItem('refresh_token')).toBe('myref')
+  })
+
+  it('clearTokens removes both specific localStorage keys', () => {
+    localStorage.setItem('access_token', 'acc')
+    localStorage.setItem('refresh_token', 'ref')
+    clearTokens()
+    expect(localStorage.getItem('access_token')).toBeNull()
+    expect(localStorage.getItem('refresh_token')).toBeNull()
+  })
+
+  it('access token key does not alias the refresh token key', () => {
+    setTokens('acc', 'ref')
+    // If the two keys were swapped in setTokens, this would fail
+    expect(getAccessToken()).toBe('acc')
+    expect(getRefreshToken()).toBe('ref')
+  })
 })
 
 describe('decodeJwtPayload', () => {
@@ -42,6 +67,14 @@ describe('decodeJwtPayload', () => {
 
   it('throws on malformed token', () => {
     expect(() => decodeJwtPayload('notajwt')).toThrow('invalid JWT structure')
+  })
+
+  it('throws on a two-part token (missing signature)', () => {
+    expect(() => decodeJwtPayload('header.payload')).toThrow('invalid JWT structure')
+  })
+
+  it('throws on a four-part token', () => {
+    expect(() => decodeJwtPayload('a.b.c.d')).toThrow('invalid JWT structure')
   })
 
   it('handles URL-safe base64 characters', () => {
@@ -72,6 +105,20 @@ describe('isTokenExpired', () => {
 
   it('returns true for a malformed token', () => {
     expect(isTokenExpired('bad')).toBe(true)
+  })
+
+  it('treats a token expiring within 30 seconds as expired (30-second buffer)', () => {
+    // exp = now + 20s — still in the future, but within the 30s safety buffer
+    const exp = Math.floor(Date.now() / 1000) + 20
+    const payload = btoa(JSON.stringify({ sub: 'u', exp }))
+    expect(isTokenExpired(`h.${payload}.s`)).toBe(true)
+  })
+
+  it('treats a token expiring in 60 seconds as still valid', () => {
+    // exp = now + 60s — outside the 30s buffer
+    const exp = Math.floor(Date.now() / 1000) + 60
+    const payload = btoa(JSON.stringify({ sub: 'u', exp }))
+    expect(isTokenExpired(`h.${payload}.s`)).toBe(false)
   })
 })
 
