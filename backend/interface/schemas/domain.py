@@ -44,6 +44,11 @@ class DomainUpdateMemberModel(BaseModel):
 
 
 # Legacy — kept for backward compatibility
+class DomainResponseModel(BaseModel):
+    id: uuid.UUID
+    name: str
+
+
 class DomainMemberModel(BaseModel):
     user_id: uuid.UUID
 
