@@ -4,6 +4,7 @@ import PrivateRoute from './components/PrivateRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import DomainsList from './pages/Domains'
 import DataContractsList from './pages/DataContracts'
 import DataContractDetail from './pages/DataContracts/DataContractDetail'
 import NewDataContract from './pages/DataContracts/NewDataContract'
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/" element={<Layout />}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="domains" element={<DomainsList />} />
               <Route path="data-contracts" element={<DataContractsList />} />
               <Route path="data-contracts/new" element={<NewDataContract />} />
               <Route path="data-contracts/:id" element={<DataContractDetail />} />
