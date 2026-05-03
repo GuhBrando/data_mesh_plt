@@ -68,6 +68,30 @@ export interface User {
 export interface Domain {
   id: string
   name: string
+  description: string
+  owner_id: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DomainMember {
+  user_id: string
+  username: string
+  role: 'maintainer' | 'member'
+}
+
+export interface DomainWithMembers extends Domain {
+  owner_username: string
+  members: DomainMember[]
+  contract_count: number
+}
+
+export type DomainAccess = 'owner' | 'maintainer' | 'member' | 'none'
+
+export interface DomainInput {
+  name: string
+  description: string
+  owner_id: string
 }
 
 export interface DataProductFormData {
