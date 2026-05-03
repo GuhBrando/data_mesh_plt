@@ -1,3 +1,4 @@
+import { Users, FileText } from 'lucide-react'
 import Badge from '../../components/ui/Badge'
 import type { DomainWithMembers, DomainAccess } from '../../types'
 
@@ -53,8 +54,14 @@ export default function DomainCard({ domain, access, isSelected, onClick }: Doma
         {domain.description}
       </p>
       <div className="flex gap-3 text-[10px] text-slate-400">
-        <span>👥 {domain.members.length}</span>
-        <span>📄 {domain.contract_count}</span>
+        <span className="flex items-center gap-1">
+          <Users size={10} aria-hidden="true" />
+          {domain.members.length}
+        </span>
+        <span className="flex items-center gap-1">
+          <FileText size={10} aria-hidden="true" />
+          {domain.contract_count}
+        </span>
       </div>
     </button>
   )

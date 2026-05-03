@@ -56,11 +56,11 @@ describe('DomainCard', () => {
 
   it('shows member count', () => {
     render(<DomainCard domain={domain} access="member" isSelected={false} onClick={vi.fn()} />)
-    expect(screen.getByText(/1/)).toBeInTheDocument()
+    expect(screen.getByText('1')).toBeInTheDocument()
   })
 
   it('shows contract count', () => {
     render(<DomainCard domain={domain} access="member" isSelected={false} onClick={vi.fn()} />)
-    expect(screen.getByText(/3/)).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
   })
 })
