@@ -1,10 +1,13 @@
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import Table from './Table'
+import type { Column } from './Table'
 
-const columns = [
-  { key: 'name', header: 'Name', render: (row: { name: string }) => <span>{row.name}</span> },
-  { key: 'email', header: 'Email', render: (row: { email: string }) => <span>{row.email}</span> },
+type Row = { name: string; email: string }
+
+const columns: Column<Row>[] = [
+  { key: 'name', header: 'Name', render: (row) => <span>{row.name}</span> },
+  { key: 'email', header: 'Email', render: (row) => <span>{row.email}</span> },
   { key: 'actions', header: '', render: () => <button>Delete</button> },
 ]
 
