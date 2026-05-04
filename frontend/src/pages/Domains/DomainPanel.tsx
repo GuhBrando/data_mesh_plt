@@ -92,7 +92,7 @@ function PanelContent({
   const [editOpen, setEditOpen] = useState(false)
   const removeMember = useRemoveDomainMember(domain.id)
 
-  const isOwner = access === 'owner'
+  const isOwner = access === 'owner' || access === 'admin'
   const canSeeMembers = access !== 'none'
 
   return (
