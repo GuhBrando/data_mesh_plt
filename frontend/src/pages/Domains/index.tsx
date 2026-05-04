@@ -11,6 +11,7 @@ type FilterTab = 'all' | Exclude<DomainAccess, 'none'>
 
 const FILTER_LABELS: Record<FilterTab, string> = {
   all: 'All',
+  admin: 'Admin',
   owner: 'Owner',
   maintainer: 'Maintainer',
   member: 'Member',
@@ -26,7 +27,7 @@ export default function DomainsList() {
     () =>
       domains.map((d) => ({
         domain: d,
-        access: user ? getDomainAccess(d, user.id) : ('none' as DomainAccess),
+        access: user ? getDomainAccess(d, user.id, user.role) : ('none' as DomainAccess),
       })),
     [domains, user],
   )
@@ -46,6 +47,7 @@ export default function DomainsList() {
   const filterTabs = useMemo(
     () => [
       { id: 'all' as FilterTab, label: 'All', count: domains.length },
+      { id: 'admin' as FilterTab, label: 'Admin', count: counts.admin ?? 0 },
       { id: 'owner' as FilterTab, label: 'Owner', count: counts.owner ?? 0 },
       { id: 'maintainer' as FilterTab, label: 'Maintainer', count: counts.maintainer ?? 0 },
       { id: 'member' as FilterTab, label: 'Member', count: counts.member ?? 0 },
