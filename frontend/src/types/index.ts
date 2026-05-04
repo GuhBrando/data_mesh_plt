@@ -86,7 +86,7 @@ export interface DomainWithMembers extends Domain {
   contract_count: number
 }
 
-export type DomainAccess = 'owner' | 'maintainer' | 'member' | 'none'
+export type DomainAccess = 'admin' | 'owner' | 'maintainer' | 'member' | 'none'
 
 export interface DomainInput {
   name: string

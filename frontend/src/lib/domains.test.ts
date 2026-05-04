@@ -44,4 +44,16 @@ describe('getDomainAccess', () => {
     }
     expect(getDomainAccess(d, 'user-alice')).toBe('owner')
   })
+
+  it('returns "admin" for a PLATFORM_ADMIN regardless of domain membership', () => {
+    expect(getDomainAccess(domain, 'user-dave', 'PLATFORM_ADMIN')).toBe('admin')
+  })
+
+  it('returns "admin" for a PLATFORM_ADMIN even when they are the domain owner', () => {
+    expect(getDomainAccess(domain, 'user-alice', 'PLATFORM_ADMIN')).toBe('admin')
+  })
+
+  it('returns "owner" without userRole argument (backward-compatible)', () => {
+    expect(getDomainAccess(domain, 'user-alice')).toBe('owner')
+  })
 })
