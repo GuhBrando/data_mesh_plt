@@ -105,23 +105,27 @@ function PanelContent({
           </h2>
           <Badge
             variant={
-              access === 'owner'
-                ? 'purple'
-                : access === 'maintainer'
-                  ? 'yellow'
-                  : access === 'member'
-                    ? 'green'
-                    : 'gray'
+              access === 'admin'
+                ? 'blue'
+                : access === 'owner'
+                  ? 'purple'
+                  : access === 'maintainer'
+                    ? 'yellow'
+                    : access === 'member'
+                      ? 'green'
+                      : 'gray'
             }
             className="mt-1 text-[10px]"
           >
-            {access === 'owner'
-              ? 'Owner'
-              : access === 'maintainer'
-                ? 'Maintainer'
-                : access === 'member'
-                  ? 'Member'
-                  : 'No Access'}
+            {access === 'admin'
+              ? 'Admin'
+              : access === 'owner'
+                ? 'Owner'
+                : access === 'maintainer'
+                  ? 'Maintainer'
+                  : access === 'member'
+                    ? 'Member'
+                    : 'No Access'}
           </Badge>
         </div>
         <button
