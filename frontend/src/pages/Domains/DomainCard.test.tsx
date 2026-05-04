@@ -63,4 +63,10 @@ describe('DomainCard', () => {
     render(<DomainCard domain={domain} access="member" isSelected={false} onClick={vi.fn()} />)
     expect(screen.getByText('3')).toBeInTheDocument()
   })
+
+  it('renders "Admin" badge when access is admin', () => {
+    render(<DomainCard domain={domain} access="admin" isSelected={false} onClick={vi.fn()} />)
+    expect(screen.getByText('Admin')).toBeInTheDocument()
+    expect(screen.getByTestId('domain-card')).toHaveAttribute('data-access', 'admin')
+  })
 })

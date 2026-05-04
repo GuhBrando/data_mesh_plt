@@ -3,6 +3,8 @@ import Badge from '../../components/ui/Badge'
 import type { DomainWithMembers, DomainAccess } from '../../types'
 
 const ACCESS_CARD_CLASSES: Record<DomainAccess, string> = {
+  admin:
+    'border-[1.5px] border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400',
   owner:
     'border-[1.5px] border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-400',
   maintainer:
@@ -12,7 +14,8 @@ const ACCESS_CARD_CLASSES: Record<DomainAccess, string> = {
   none: 'border border-slate-200 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-700 opacity-65',
 }
 
-const ACCESS_BADGE_VARIANT: Record<DomainAccess, 'purple' | 'yellow' | 'green' | 'gray'> = {
+const ACCESS_BADGE_VARIANT: Record<DomainAccess, 'blue' | 'purple' | 'yellow' | 'green' | 'gray'> = {
+  admin: 'blue',
   owner: 'purple',
   maintainer: 'yellow',
   member: 'green',
@@ -20,6 +23,7 @@ const ACCESS_BADGE_VARIANT: Record<DomainAccess, 'purple' | 'yellow' | 'green' |
 }
 
 const ACCESS_LABELS: Record<DomainAccess, string> = {
+  admin: 'Admin',
   owner: 'Owner',
   maintainer: 'Maintainer',
   member: 'Member',
