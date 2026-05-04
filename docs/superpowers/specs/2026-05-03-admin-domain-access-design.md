@@ -42,8 +42,9 @@ export function getDomainAccess(
 ## Domains Page
 
 - Pass `user.role` as the third argument to `getDomainAccess` in the `domainsWithAccess` memo.
-- Add `'admin'` to `FILTER_LABELS`: `admin: 'Admin'`.
-- `FilterTab` is derived from `DomainAccess` via `Exclude<DomainAccess, 'none'>`, so it picks up `'admin'` automatically. Non-admin users always have an `'admin'` count of 0, so the tab is filtered out and never rendered for them.
+- Add `'admin'` to `FILTER_LABELS`: `admin: 'Admin'`. TypeScript enforces `Record<FilterTab, string>` exhaustively, so this is required once `'admin'` is in `FilterTab`.
+- Add an `'admin'` entry to the hardcoded `filterTabs` array: `{ id: 'admin' as FilterTab, label: 'Admin', count: counts.admin ?? 0 }`.
+- `FilterTab` is derived from `DomainAccess` via `Exclude<DomainAccess, 'none'>`, so it picks up `'admin'` automatically. Non-admin users always have an `'admin'` count of 0, so the tab is filtered out by the existing `t.count > 0 || t.id === 'all'` guard and never rendered for them.
 
 ## DomainCard
 
@@ -51,8 +52,8 @@ Three lookup maps gain an `'admin'` entry:
 
 | Map | Value |
 |-----|-------|
-| `ACCESS_BADGE_VARIANT` | `'blue'` (distinct from owner `'purple'`) |
-| `ACCESS_CARD_CLASSES` | selected/hover styling consistent with other entries |
+| `ACCESS_BADGE_VARIANT` | `'blue'` (valid Badge variant; distinct from owner `'purple'`). Update the type annotation to include `'blue'`. |
+| `ACCESS_CARD_CLASSES` | `'border-[1.5px] border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400'` |
 | `ACCESS_LABELS` | `'Admin'` |
 
 ## DomainPanel
