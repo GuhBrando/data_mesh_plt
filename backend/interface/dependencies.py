@@ -30,7 +30,11 @@ from backend.use_cases.data_product.list import ListDataProductsUseCase
 from backend.use_cases.data_product.update import UpdateDataProductUseCase
 from backend.use_cases.domain.add_member import AddDomainMemberUseCase
 from backend.use_cases.domain.create import CreateDomainUseCase
+from backend.use_cases.domain.delete import DeleteDomainUseCase
+from backend.use_cases.domain.list import ListDomainsUseCase
 from backend.use_cases.domain.remove_member import RemoveDomainMemberUseCase
+from backend.use_cases.domain.update import UpdateDomainUseCase
+from backend.use_cases.domain.update_member import UpdateDomainMemberUseCase
 from backend.use_cases.stakeholder.assign import AssignStakeholderUseCase
 from backend.use_cases.stakeholder.remove import RemoveStakeholderUseCase
 from backend.use_cases.user.assign_role import AssignRoleUseCase
@@ -231,6 +235,30 @@ def get_remove_domain_member_use_case(
     repo=Depends(get_domain_repository),
 ) -> RemoveDomainMemberUseCase:
     return RemoveDomainMemberUseCase(repo)
+
+
+def get_list_domains_use_case(
+    repo=Depends(get_domain_repository),
+) -> ListDomainsUseCase:
+    return ListDomainsUseCase(repo)
+
+
+def get_update_domain_use_case(
+    repo=Depends(get_domain_repository),
+) -> UpdateDomainUseCase:
+    return UpdateDomainUseCase(repo)
+
+
+def get_delete_domain_use_case(
+    repo=Depends(get_domain_repository),
+) -> DeleteDomainUseCase:
+    return DeleteDomainUseCase(repo)
+
+
+def get_update_domain_member_use_case(
+    repo=Depends(get_domain_repository),
+) -> UpdateDomainMemberUseCase:
+    return UpdateDomainMemberUseCase(repo)
 
 
 # --- Stakeholder use cases ---

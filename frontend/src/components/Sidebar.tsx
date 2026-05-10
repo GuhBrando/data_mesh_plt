@@ -9,6 +9,7 @@ import {
   Sun,
   Moon,
   LogOut,
+  Building2,
 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -17,6 +18,7 @@ import { getRefreshToken } from '../lib/auth'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/domains', icon: Building2, label: 'Domains' },
   { to: '/data-contracts', icon: FileText, label: 'Data Contracts' },
   { to: '/data-products', icon: Package, label: 'Data Products' },
   { to: '/users', icon: Users, label: 'Users' },

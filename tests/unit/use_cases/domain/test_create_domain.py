@@ -14,7 +14,7 @@ async def test_create_domain_returns_domain():
     repo.create.return_value = domain
     use_case = CreateDomainUseCase(repo)
     result = await use_case.execute(name="Sales")
-    repo.create.assert_called_once_with("Sales")
+    repo.create.assert_called_once_with("Sales", "", None)
     assert result.name == "Sales"
 
 
@@ -38,4 +38,4 @@ async def test_create_domain_strips_surrounding_whitespace():
     repo.create.return_value = domain
     use_case = CreateDomainUseCase(repo)
     await use_case.execute(name="  Finance  ")
-    repo.create.assert_called_once_with("Finance")
+    repo.create.assert_called_once_with("Finance", "", None)

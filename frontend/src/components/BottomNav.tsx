@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, FileText, Package, Users } from 'lucide-react'
+import { LayoutDashboard, FileText, Package, Users, Building2 } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Home' },
+  { to: '/domains', icon: Building2, label: 'Domains' },
   { to: '/data-contracts', icon: FileText, label: 'Contracts' },
   { to: '/data-products', icon: Package, label: 'Products' },
   { to: '/users', icon: Users, label: 'Users' },
