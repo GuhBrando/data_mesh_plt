@@ -23,7 +23,7 @@ repos:
     rev: 1.8.3
     hooks:
       - id: bandit
-        args: ["-r", "backend/", "-ll"]
+        args: ["-r", "backend/", "-ll", "-c", "pyproject.toml"]
         pass_filenames: false
 
   # ── Secret scan (mirrors gitleaks-action in security.yml) ──────────────────
