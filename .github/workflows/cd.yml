@@ -93,7 +93,8 @@ jobs:
               "postgres-password=${{ secrets.POSTGRES_PASSWORD }}" \
               "admin-password=${{ secrets.ADMIN_PASSWORD }}" \
               "app-user-password=${{ secrets.APP_USER_PASSWORD }}" \
-              "user-password=${{ secrets.USER_PASSWORD }}"
+              "user-password=${{ secrets.USER_PASSWORD }}" \
+              "jwt-secret-key=${{ secrets.JWT_SECRET_KEY }}"
 
       - name: Update Container App with new image
         env:
@@ -113,7 +114,8 @@ jobs:
               "POSTGRES_PASSWORD=secretref:postgres-password" \
               "ADMIN_PASSWORD=secretref:admin-password" \
               "APP_USER_PASSWORD=secretref:app-user-password" \
-              "USER_PASSWORD=secretref:user-password"
+              "USER_PASSWORD=secretref:user-password" \
+              "JWT_SECRET_KEY=secretref:jwt-secret-key"
 
       - name: Configure CORS
         run: |
