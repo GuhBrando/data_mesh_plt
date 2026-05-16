@@ -1,5 +1,7 @@
 from fastapi import Depends
 
+from backend.infra.config import GITHUB_REPO, GITHUB_TOKEN
+from backend.infra.github_client import GitHubClient
 from backend.infra.postgres import get_db_connection
 from backend.infra.repositories.data_contract_repository import (
     PostgresDataContractRepository,
@@ -43,6 +45,15 @@ from backend.use_cases.user.delete import DeleteUserUseCase
 from backend.use_cases.user.get import GetUserUseCase
 from backend.use_cases.user.list import ListUsersUseCase
 from backend.use_cases.user.update import UpdateUserUseCase
+
+# --- GitHub client ---
+
+
+def get_github_client() -> GitHubClient | None:
+    if not GITHUB_TOKEN:
+        return None
+    return GitHubClient(token=GITHUB_TOKEN, repo=GITHUB_REPO)
+
 
 # --- Repositories ---
 

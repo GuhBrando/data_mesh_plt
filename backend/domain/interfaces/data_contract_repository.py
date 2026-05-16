@@ -1,8 +1,12 @@
-import uuid
-from abc import ABC, abstractmethod
-from typing import Any
+from __future__ import annotations
 
-from backend.domain.entities.data_contract import DataContract
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import uuid
+
+    from backend.domain.entities.data_contract import DataContract
 
 
 class IDataContractRepository(ABC):
@@ -12,12 +16,11 @@ class IDataContractRepository(ABC):
         title: str,
         version: str,
         owner: str,
-        domain: str,
+        domain_id: uuid.UUID,
         tier: int,
         status: str,
         models: dict[str, Any],
         servicelevels: dict[str, Any],
-        domain_id: uuid.UUID | None = None,
     ) -> DataContract: ...
 
     @abstractmethod
@@ -33,7 +36,7 @@ class IDataContractRepository(ABC):
         title: str,
         version: str,
         owner: str,
-        domain: str,
+        domain_id: uuid.UUID,
         tier: int,
         status: str,
         models: dict[str, Any],
@@ -42,3 +45,25 @@ class IDataContractRepository(ABC):
 
     @abstractmethod
     async def delete(self, contract_id: uuid.UUID) -> bool: ...
+
+    @abstractmethod
+    async def list_by_domain_id(self, domain_id: uuid.UUID) -> list[DataContract]: ...
+
+    @abstractmethod
+    async def upsert(
+        self,
+        contract_id: uuid.UUID,
+        title: str,
+        version: str,
+        owner: str,
+        domain_id: uuid.UUID,
+        tier: int,
+        status: str,
+        models: dict[str, Any],
+        servicelevels: dict[str, Any],
+    ) -> bool:
+        """Insert or update a contract by id.
+
+        Returns True if created, False if updated.
+        """
+        ...

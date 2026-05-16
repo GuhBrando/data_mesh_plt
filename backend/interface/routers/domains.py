@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import List
 
@@ -6,11 +7,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.domain.entities.domain import Domain, DomainMember
 from backend.domain.entities.user import User
 from backend.domain.value_objects.user_role import UserRole
+from backend.infra.github_client import GitHubClient
 from backend.infra.postgres import get_db_connection
 from backend.interface.dependencies import (
     get_add_domain_member_use_case,
     get_create_domain_use_case,
+    get_data_contract_repository,
     get_delete_domain_use_case,
+    get_github_client,
     get_list_domains_use_case,
     get_remove_domain_member_use_case,
     get_update_domain_member_use_case,
@@ -34,6 +38,7 @@ from backend.use_cases.domain.remove_member import RemoveDomainMemberUseCase
 from backend.use_cases.domain.update import UpdateDomainUseCase
 from backend.use_cases.domain.update_member import UpdateDomainMemberUseCase
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 _admin_only = require_roles(UserRole.PLATFORM_ADMIN)
@@ -97,19 +102,23 @@ async def update_domain(
     domain_id: uuid.UUID,
     body: DomainUpdateModel,
     use_case: UpdateDomainUseCase = Depends(get_update_domain_use_case),
+    contract_repo=Depends(get_data_contract_repository),
+    github: GitHubClient | None = Depends(get_github_client),
     current_user: User = Depends(get_current_user),
-    db=Depends(get_db_connection),
 ):
-    # Allow PLATFORM_ADMIN or the domain's owner
-    if current_user.role != UserRole.PLATFORM_ADMIN:
-        from backend.infra.repositories.domain_repository import (
-            PostgresDomainRepository,
-        )
+    from backend.use_cases.data_contract.yaml_builder import assemble_yaml
 
-        repo = PostgresDomainRepository(db)
-        existing = await repo.get_by_id(domain_id)
-        if not existing or existing.owner_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Forbidden")
+    existing = await use_case.repository.get_by_id(domain_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Domain not found")
+
+    if (
+        current_user.role != UserRole.PLATFORM_ADMIN
+        and existing.owner_id != current_user.id
+    ):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    old_name = existing.name
 
     domain = await use_case.execute(
         domain_id=domain_id,
@@ -119,6 +128,36 @@ async def update_domain(
     )
     if not domain:
         raise HTTPException(status_code=404, detail="Domain not found")
+
+    new_name = domain.name
+    # DB rename is already committed above via use_case.execute.
+    # The joined `contract.domain` will now return new_name — use old_name
+    # (captured before the rename) to compute the old GitHub path.
+    if body.name and old_name != new_name and github:
+        contracts = await contract_repo.list_by_domain_id(domain_id)
+        for contract in contracts:
+            old_path = github.contract_path(old_name, contract.title)
+            new_path = github.contract_path(new_name, contract.title)
+            if old_path == new_path:
+                continue
+            try:
+                await github.push(
+                    new_path,
+                    assemble_yaml(contract),
+                    f"Move contract on domain rename: {contract.title}",
+                )
+                await github.delete(
+                    old_path,
+                    f"Remove stale path after domain rename: {contract.title}",
+                )
+            except Exception as exc:
+                logger.warning(
+                    "GitHub move failed for contract %s on domain rename: %s",
+                    contract.id,
+                    exc,
+                    exc_info=True,
+                )
+
     return _domain_to_response(domain)
 
 
@@ -128,7 +167,10 @@ async def delete_domain(
     use_case: DeleteDomainUseCase = Depends(get_delete_domain_use_case),
     _: User = Depends(_admin_only),
 ):
-    deleted = await use_case.execute(domain_id)
+    try:
+        deleted = await use_case.execute(domain_id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     if not deleted:
         raise HTTPException(status_code=404, detail="Domain not found")
 

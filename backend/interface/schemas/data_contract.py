@@ -39,19 +39,18 @@ class DataContractCreateModel(BaseModel):
     title: str
     version: str = "1.0.0"
     owner: str
-    domain: str
+    domain_id: uuid.UUID
     tier: int = Field(..., ge=1, le=4)
     status: Literal["draft", "in_review", "active", "deprecated"] = "draft"
     models: ModelsSection = Field(default_factory=ModelsSection)
     servicelevels: ServiceLevels = Field(default_factory=ServiceLevels)
-    domain_id: uuid.UUID | None = None
 
 
 class DataContractUpdateModel(BaseModel):
     title: str | None = None
     version: str | None = None
     owner: str | None = None
-    domain: str | None = None
+    domain_id: uuid.UUID | None = None
     tier: int | None = Field(default=None, ge=1, le=4)
     status: Literal["draft", "in_review", "active", "deprecated"] | None = None
     models: ModelsSection | None = None
@@ -63,11 +62,11 @@ class DataContractResponseModel(BaseModel):
     title: str
     version: str
     owner: str
-    domain: str
+    domain: str  # joined name — read-only, never sent by client
     tier: int
     status: str
     models: dict[str, Any]
     servicelevels: dict[str, Any]
-    domain_id: uuid.UUID | None
+    domain_id: uuid.UUID
     created_at: datetime
     updated_at: datetime

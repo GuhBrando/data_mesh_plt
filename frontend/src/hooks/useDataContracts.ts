@@ -37,6 +37,7 @@ export function useCreateDataContract() {
     mutationFn: (input) => post<DataContract>('/data-contracts', input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: ['domains'] })
     },
   })
 }
@@ -60,6 +61,7 @@ export function useDeleteDataContract() {
     mutationFn: (id) => del(`/data-contracts/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: ['domains'] })
     },
   })
 }

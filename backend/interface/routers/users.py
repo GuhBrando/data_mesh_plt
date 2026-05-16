@@ -116,11 +116,11 @@ async def get_user_domains(
         raise HTTPException(status_code=403, detail="Insufficient permissions")
     rows = await db.fetch(
         """
-        SELECT p.id, p.name
-        FROM iam.principals p
-        JOIN iam.principal_memberships pm ON pm.principals_id = p.id
-        WHERE pm.users_id = $1 AND p.type = 'GROUP'
-        ORDER BY p.name;
+        SELECT d.id, d.name
+        FROM catalog.domains d
+        JOIN catalog.domain_members dm ON dm.domain_id = d.id
+        WHERE dm.user_id = $1
+        ORDER BY d.name;
         """,
         user_id,
     )

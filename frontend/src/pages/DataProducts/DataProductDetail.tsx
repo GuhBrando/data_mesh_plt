@@ -190,7 +190,6 @@ export default function DataProductDetail() {
             variant="danger"
             loading={deleteMutation.isPending}
             onClick={handleDelete}
-            className="btn-primary bg-red-600 hover:bg-red-700 focus:ring-red-500"
           >
             Delete
           </Button>
