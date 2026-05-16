@@ -1,0 +1,184 @@
+import uuid
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock
+
+import pytest
+import yaml
+
+from backend.domain.entities.data_contract import DataContract
+from backend.domain.entities.domain import Domain
+from backend.use_cases.data_contract.sync_from_github import SyncFromGitHubUseCase
+
+NOW = datetime.now(tz=timezone.utc)
+DOMAIN_ID = uuid.uuid4()
+CONTRACT_ID = uuid.uuid4()
+
+
+def _yaml(
+    *,
+    contract_id=None,
+    domain="commerce",
+    title="Orders",
+    owner="alice",
+    version="1.0.0",
+    status="draft",
+    tier=2,
+    models=None,
+    quality=None,
+    servicelevels=None,
+) -> str:
+    data: dict = {
+        "id": str(contract_id or CONTRACT_ID),
+        "info": {
+            "title": title,
+            "owner": owner,
+            "domain": domain,
+            "version": version,
+            "status": status,
+        },
+        "x-tier": tier,
+        "models": models or {},
+    }
+    if quality:
+        data["quality"] = quality
+    if servicelevels:
+        data["servicelevels"] = servicelevels
+    return yaml.dump(data)
+
+
+def _domain(name: str = "commerce") -> Domain:
+    return Domain(id=DOMAIN_ID, name=name, created_at=NOW, updated_at=NOW)
+
+
+def _contract(domain: str = "commerce") -> DataContract:
+    return DataContract(
+        id=CONTRACT_ID,
+        title="Orders",
+        version="1.0.0",
+        owner="alice",
+        domain=domain,
+        domain_id=DOMAIN_ID,
+        tier=2,
+        status="draft",
+        models={},
+        servicelevels={},
+        created_at=NOW,
+        updated_at=NOW,
+    )
+
+
+@pytest.fixture
+def repo():
+    r = AsyncMock()
+    r.get_by_id.return_value = None
+    r.upsert.return_value = True
+    return r
+
+
+@pytest.fixture
+def github():
+    g = AsyncMock()
+    g.list_all_yaml_contents.return_value = []
+    return g
+
+
+@pytest.fixture
+def domain_repo():
+    d = AsyncMock()
+    d.find_by_name.return_value = _domain()
+    return d
+
+
+@pytest.fixture
+def use_case(repo, github, domain_repo):
+    return SyncFromGitHubUseCase(repository=repo, github=github, domain_repo=domain_repo)
+
+
+async def test_empty_repo_returns_zeros(use_case):
+    result = await use_case.execute()
+    assert result == {"created": 0, "updated": 0, "errors": []}
+
+
+async def test_creates_new_contract(use_case, github, repo):
+    github.list_all_yaml_contents.return_value = [("commerce/orders.yaml", _yaml())]
+    repo.upsert.return_value = True
+    result = await use_case.execute()
+    assert result["created"] == 1
+    assert result["updated"] == 0
+    assert result["errors"] == []
+
+
+async def test_updates_existing_contract(use_case, github, repo):
+    github.list_all_yaml_contents.return_value = [("commerce/orders.yaml", _yaml())]
+    repo.upsert.return_value = False
+    result = await use_case.execute()
+    assert result["updated"] == 1
+    assert result["created"] == 0
+
+
+async def test_missing_domain_name_adds_error(use_case, github):
+    content = yaml.dump({"id": str(CONTRACT_ID), "info": {"title": "X", "owner": "o"}})
+    github.list_all_yaml_contents.return_value = [("x.yaml", content)]
+    result = await use_case.execute()
+    assert len(result["errors"]) == 1
+    assert result["errors"][0]["path"] == "x.yaml"
+    assert "no domain" in result["errors"][0]["error"]
+
+
+async def test_domain_mismatch_adds_error(use_case, github, repo):
+    repo.get_by_id.return_value = _contract(domain="other")
+    github.list_all_yaml_contents.return_value = [
+        ("commerce/orders.yaml", _yaml(domain="commerce"))
+    ]
+    result = await use_case.execute()
+    assert len(result["errors"]) == 1
+    assert "domain mismatch" in result["errors"][0]["error"]
+
+
+async def test_exception_during_processing_adds_error(use_case, github):
+    content = yaml.dump({"info": {"title": "X"}})  # missing 'id' key
+    github.list_all_yaml_contents.return_value = [("bad.yaml", content)]
+    result = await use_case.execute()
+    assert result["errors"][0]["path"] == "bad.yaml"
+    assert result["created"] == 0
+
+
+async def test_quality_merged_into_models(use_case, github, repo):
+    github.list_all_yaml_contents.return_value = [
+        ("c/o.yaml", _yaml(models={"field1": {}}, quality=[{"dimension": "freshness"}]))
+    ]
+    await use_case.execute()
+    assert "quality" in repo.upsert.call_args.kwargs["models"]
+
+
+async def test_resolve_domain_creates_when_not_found(use_case, github, repo, domain_repo):
+    domain_repo.find_by_name.return_value = None
+    domain_repo.create.return_value = _domain()
+    github.list_all_yaml_contents.return_value = [("c/o.yaml", _yaml())]
+    result = await use_case.execute()
+    domain_repo.create.assert_called_once()
+    assert result["created"] == 1
+
+
+async def test_upsert_called_with_correct_fields(use_case, github, repo):
+    github.list_all_yaml_contents.return_value = [
+        ("c/o.yaml", _yaml(title="Invoices", owner="bob", tier=3, version="2.0.0"))
+    ]
+    await use_case.execute()
+    kwargs = repo.upsert.call_args.kwargs
+    assert kwargs["title"] == "Invoices"
+    assert kwargs["owner"] == "bob"
+    assert kwargs["tier"] == 3
+    assert kwargs["version"] == "2.0.0"
+
+
+async def test_multiple_yamls_counted_separately(use_case, github, repo):
+    repo.upsert.side_effect = [True, False, True]
+    github.list_all_yaml_contents.return_value = [
+        ("a/a.yaml", _yaml(contract_id=uuid.uuid4())),
+        ("b/b.yaml", _yaml(contract_id=uuid.uuid4())),
+        ("c/c.yaml", _yaml(contract_id=uuid.uuid4())),
+    ]
+    result = await use_case.execute()
+    assert result["created"] == 2
+    assert result["updated"] == 1
