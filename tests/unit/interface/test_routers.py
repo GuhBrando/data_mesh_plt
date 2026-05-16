@@ -37,6 +37,7 @@ from backend.main import app
 
 NOW = datetime.now(tz=timezone.utc)
 CONTRACT_ID = uuid.uuid4()
+DOMAIN_ID = uuid.uuid4()
 USER_ID = uuid.uuid4()
 
 
@@ -54,7 +55,7 @@ def _contract(**kw) -> DataContract:
             "freshness": "24h", "availability": "99%",
             "retention": "365d", "latency": "1h",
         },
-        domain_id=None,
+        domain_id=DOMAIN_ID,
         created_at=NOW,
         updated_at=NOW,
     )
@@ -158,7 +159,7 @@ def test_create_data_contract(admin_client):
         "title": "Sales",
         "version": "1.0.0",
         "owner": "bob",
-        "domain": "finance",
+        "domain_id": str(DOMAIN_ID),
         "tier": 2,
         "status": "draft",
         "models": {"fields": []},
