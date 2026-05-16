@@ -14,12 +14,11 @@ class CreateDataContractUseCase:
         title: str,
         version: str,
         owner: str,
-        domain: str,
+        domain_id: uuid.UUID,
         tier: int,
         status: str,
         models: dict[str, Any],
         servicelevels: dict[str, Any],
-        domain_id: uuid.UUID | None = None,
     ) -> DataContract:
         if not title:
             raise ValueError("Data contract title cannot be empty")
@@ -27,10 +26,9 @@ class CreateDataContractUseCase:
             title=title,
             version=version,
             owner=owner,
-            domain=domain,
+            domain_id=domain_id,
             tier=tier,
             status=status,
             models=models,
             servicelevels=servicelevels,
-            domain_id=domain_id,
         )

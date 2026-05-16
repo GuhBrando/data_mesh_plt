@@ -14,6 +14,9 @@ class IDomainRepository(ABC):
     async def get_by_id(self, domain_id: uuid.UUID) -> Domain | None: ...
 
     @abstractmethod
+    async def find_by_name(self, name: str) -> Domain | None: ...
+
+    @abstractmethod
     async def list(self) -> list[Domain]: ...
 
     @abstractmethod

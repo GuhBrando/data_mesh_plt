@@ -29,6 +29,7 @@ export function useUpdateDomain() {
     onSuccess: (updated) => {
       qc.invalidateQueries({ queryKey: KEYS.all })
       qc.invalidateQueries({ queryKey: KEYS.one(updated.id) })
+      qc.invalidateQueries({ queryKey: ['data-contracts'] })
     },
   })
 }

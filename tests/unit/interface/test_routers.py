@@ -20,10 +20,13 @@ from backend.interface.dependencies import (
     get_assign_stakeholder_use_case,
     get_create_data_contract_use_case,
     get_create_user_use_case,
+    get_data_contract_repository,
     get_delete_data_contract_use_case,
     get_delete_user_use_case,
+    get_domain_repository,
     get_get_data_contract_use_case,
     get_get_user_use_case,
+    get_github_client,
     get_list_data_contracts_use_case,
     get_list_users_use_case,
     get_remove_stakeholder_use_case,
@@ -37,6 +40,7 @@ from backend.main import app
 
 NOW = datetime.now(tz=timezone.utc)
 CONTRACT_ID = uuid.uuid4()
+DOMAIN_ID = uuid.uuid4()
 USER_ID = uuid.uuid4()
 
 
@@ -54,7 +58,7 @@ def _contract(**kw) -> DataContract:
             "freshness": "24h", "availability": "99%",
             "retention": "365d", "latency": "1h",
         },
-        domain_id=None,
+        domain_id=DOMAIN_ID,
         created_at=NOW,
         updated_at=NOW,
     )
@@ -158,7 +162,7 @@ def test_create_data_contract(admin_client):
         "title": "Sales",
         "version": "1.0.0",
         "owner": "bob",
-        "domain": "finance",
+        "domain_id": str(DOMAIN_ID),
         "tier": 2,
         "status": "draft",
         "models": {"fields": []},
@@ -389,3 +393,55 @@ def test_yaml_with_quality_data(admin_client):
     resp = admin_client.get(f"/api/v1/data-contracts/{CONTRACT_ID}/yaml")
     assert resp.status_code == 200
     assert "quality" in resp.text
+
+
+# ── sync endpoint ─────────────────────────────────────────────────────────────
+
+def test_sync_no_github_returns_503(admin_client):
+    app.dependency_overrides[get_github_client] = lambda: None
+    resp = admin_client.post("/api/v1/data-contracts/sync")
+    assert resp.status_code == 503
+
+
+def test_sync_with_github_returns_result(admin_client):
+    mock_github = AsyncMock()
+    mock_github.list_all_yaml_contents.return_value = []
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    app.dependency_overrides[get_data_contract_repository] = lambda: AsyncMock()
+    app.dependency_overrides[get_domain_repository] = lambda: AsyncMock()
+    resp = admin_client.post("/api/v1/data-contracts/sync")
+    assert resp.status_code == 200
+    assert resp.json() == {"created": 0, "updated": 0, "errors": []}
+
+
+# ── DATA_STEWARD stakeholder paths ────────────────────────────────────────────
+
+def _steward_client():
+    return _user(UserRole.DATA_STEWARD)
+
+
+def test_assign_stakeholder_steward_contract_not_found(admin_client):
+    app.dependency_overrides[get_current_user] = lambda: _steward_client()
+    mock_get = AsyncMock()
+    mock_get.execute.return_value = None
+    mock_assign = AsyncMock()
+    app.dependency_overrides[get_get_data_contract_use_case] = lambda: mock_get
+    app.dependency_overrides[get_assign_stakeholder_use_case] = lambda: mock_assign
+    resp = admin_client.post(
+        f"/api/v1/data-contracts/{CONTRACT_ID}/stakeholders",
+        json={"user_id": str(USER_ID)},
+    )
+    assert resp.status_code == 404
+
+
+def test_remove_stakeholder_steward_contract_not_found(admin_client):
+    app.dependency_overrides[get_current_user] = lambda: _steward_client()
+    mock_get = AsyncMock()
+    mock_get.execute.return_value = None
+    mock_remove = AsyncMock()
+    app.dependency_overrides[get_get_data_contract_use_case] = lambda: mock_get
+    app.dependency_overrides[get_remove_stakeholder_use_case] = lambda: mock_remove
+    resp = admin_client.delete(
+        f"/api/v1/data-contracts/{CONTRACT_ID}/stakeholders/{USER_ID}"
+    )
+    assert resp.status_code == 404
