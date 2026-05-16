@@ -30,6 +30,11 @@ jobs:
           name: python-coverage-report
           path: coverage.xml
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage-db
+          path: .coverage
+
   coverage-react:
     name: React Coverage (>=80%)
     runs-on: ubuntu-latest
@@ -151,8 +156,13 @@ jobs:
 
       - run: uv sync --extra dev
 
+      - name: Download coverage DB
+        uses: actions/download-artifact@v4
+        with:
+          name: python-coverage-db
+
       - name: Run mutmut
-        run: uv run mutmut run || true
+        run: uv run mutmut run --use-coverage || true
 
       - name: Check mutation score threshold
         run: |
