@@ -48,7 +48,7 @@ const schema = z
     title: z.string().min(1, 'Title is required'),
     version: z.string().min(1, 'Version is required'),
     owner: z.string().min(1, 'Owner is required'),
-    domain: z.string().min(1, 'Domain is required'),
+    domain_id: z.string().min(1, 'Domain is required'),
     tier: z.number().int().min(1).max(4),
     status: z.enum(['draft', 'in_review', 'active', 'deprecated']),
     freshness: z.string().refine(isValidDuration, { message: 'Use a duration like 24h, 7d, 30m' }),
@@ -82,13 +82,13 @@ interface DataContractFormProps {
 function normalizeDefaults(v?: DataContract): FormValues {
   if (!v) {
     return {
-      title: '', version: '1.0.0', owner: '', domain: '',
+      title: '', version: '1.0.0', owner: '', domain_id: '',
       tier: 4, status: 'draft',
       freshness: '', availability: '', retention: '', latency: '',
     }
   }
   return {
-    title: v.title, version: v.version, owner: v.owner, domain: v.domain,
+    title: v.title, version: v.version, owner: v.owner, domain_id: v.domain_id,
     tier: v.tier, status: v.status,
     freshness: v.servicelevels.freshness, availability: v.servicelevels.availability,
     retention: v.servicelevels.retention, latency: v.servicelevels.latency,
@@ -248,11 +248,11 @@ function DomainSelect({
       <select
         className="w-full text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 disabled:opacity-50"
         disabled={loading}
-        {...register('domain')}
+        {...register('domain_id')}
       >
         <option value="">{loading ? 'Loading domains…' : 'Select a domain'}</option>
         {domains.map((d) => (
-          <option key={d.id} value={d.name}>{d.name}</option>
+          <option key={d.id} value={d.id}>{d.name}</option>
         ))}
       </select>
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
@@ -295,7 +295,7 @@ export default function DataContractForm({
       title: values.title,
       version: values.version,
       owner: values.owner,
-      domain: values.domain,
+      domain_id: values.domain_id,
       tier: values.tier,
       status: values.status,
       models: {
@@ -343,7 +343,7 @@ export default function DataContractForm({
                 domains={accessibleDomains}
                 loading={domainsLoading}
                 register={register}
-                error={errors.domain?.message}
+                error={errors.domain_id?.message}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

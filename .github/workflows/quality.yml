@@ -1,8 +1,6 @@
 name: Code Quality
 
 on:
-  push:
-    branches: ["**"]
   pull_request:
     branches: ["main", "develop"]
 
@@ -130,7 +128,7 @@ jobs:
   mutation-python:
     name: Python Mutation Score (>=70%)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     needs: coverage-python
     if: github.event_name == 'pull_request'
     steps:
@@ -144,10 +142,20 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Restore mutmut cache
+        uses: actions/cache@v4
+        with:
+          path: .mutmut-cache
+          key: mutmut-${{ hashFiles('backend/domain/entities/**', 'backend/domain/value_objects/**', 'backend/use_cases/**') }}
+          restore-keys: mutmut-
+
       - run: uv sync --extra dev
 
+      - name: Generate coverage data for mutmut
+        run: uv run pytest tests/unit/ --cov=backend -q --no-header
+
       - name: Run mutmut
-        run: uv run mutmut run || true
+        run: uv run mutmut run --use-coverage || true
 
       - name: Check mutation score threshold
         run: |

@@ -11,6 +11,9 @@ from backend.use_cases.data_contract.update import UpdateDataContractUseCase
 NOW = datetime.now(tz=timezone.utc)
 
 
+DOMAIN_ID = uuid.uuid4()
+
+
 def make_contract(**kwargs) -> DataContract:
     defaults = dict(
         id=uuid.uuid4(),
@@ -18,6 +21,7 @@ def make_contract(**kwargs) -> DataContract:
         version="1.0.0",
         owner="o",
         domain="d",
+        domain_id=DOMAIN_ID,
         tier=3,
         status="draft",
         models={"fields": []},
@@ -35,7 +39,7 @@ async def test_create_calls_repository():
     use_case = CreateDataContractUseCase(repo)
 
     result = await use_case.execute(
-        title="Orders", version="1.0.0", owner="alice", domain="commerce",
+        title="Orders", version="1.0.0", owner="alice", domain_id=DOMAIN_ID,
         tier=2, status="draft", models={"fields": []},
         servicelevels={"freshness": "24h", "availability": "", "retention": "", "latency": ""},
     )
@@ -51,7 +55,7 @@ async def test_create_raises_on_empty_title():
 
     with pytest.raises(ValueError, match="title"):
         await use_case.execute(
-            title="", version="1.0.0", owner="alice", domain="commerce",
+            title="", version="1.0.0", owner="alice", domain_id=DOMAIN_ID,
             tier=2, status="draft", models={"fields": []},
             servicelevels={"freshness": "", "availability": "", "retention": "", "latency": ""},
         )
@@ -66,7 +70,7 @@ async def test_update_calls_repository():
 
     result = await use_case.execute(
         contract_id=cid,
-        title="Updated", version="1.0.0", owner="bob", domain="finance",
+        title="Updated", version="1.0.0", owner="bob", domain_id=DOMAIN_ID,
         tier=1, status="in_review", models={"fields": []},
         servicelevels={"freshness": "1h", "availability": "99.9%", "retention": "365d", "latency": "30m"},
     )
@@ -82,7 +86,7 @@ async def test_update_raises_on_empty_title():
     with pytest.raises(ValueError, match="title"):
         await use_case.execute(
             contract_id=uuid.uuid4(),
-            title="", version="1.0.0", owner="alice", domain="commerce",
+            title="", version="1.0.0", owner="alice", domain_id=DOMAIN_ID,
             tier=2, status="draft", models={"fields": []},
             servicelevels={"freshness": "", "availability": "", "retention": "", "latency": ""},
         )
@@ -93,7 +97,7 @@ async def test_create_passes_title_to_repo():
     repo = AsyncMock()
     repo.create.return_value = make_contract(title="Inventory")
     await CreateDataContractUseCase(repo).execute(
-        title="Inventory", version="1.0.0", owner="alice", domain="ops",
+        title="Inventory", version="1.0.0", owner="alice", domain_id=DOMAIN_ID,
         tier=3, status="draft", models={"fields": []},
         servicelevels={"freshness": "", "availability": "", "retention": "", "latency": ""},
     )
@@ -106,7 +110,7 @@ async def test_update_passes_title_to_repo():
     repo.update.return_value = make_contract(title="NewName")
     await UpdateDataContractUseCase(repo).execute(
         contract_id=uuid.uuid4(),
-        title="NewName", version="1.0.0", owner="bob", domain="finance",
+        title="NewName", version="1.0.0", owner="bob", domain_id=DOMAIN_ID,
         tier=2, status="draft", models={"fields": []},
         servicelevels={"freshness": "", "availability": "", "retention": "", "latency": ""},
     )

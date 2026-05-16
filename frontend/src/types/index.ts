@@ -19,7 +19,8 @@ export interface DataContract {
   title: string
   version: string
   owner: string
-  domain: string
+  domain: string        // read-only joined name from API — do not send to server
+  domain_id: string
   tier: 1 | 2 | 3 | 4
   status: 'draft' | 'in_review' | 'active' | 'deprecated'
   models: { fields: SchemaField[]; quality?: QualityRule[] }
@@ -37,7 +38,7 @@ export interface DataContractInput {
   title: string
   version: string
   owner: string
-  domain: string
+  domain_id: string
   tier: number
   status: string
   models: { fields: SchemaField[]; quality?: QualityRule[] }

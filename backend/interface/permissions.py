@@ -20,8 +20,8 @@ def require_roles(*roles: UserRole) -> Callable:
 async def is_domain_member(user_id: uuid.UUID, domain_id: uuid.UUID, db) -> bool:
     row = await db.fetchrow(
         """
-        SELECT 1 FROM iam.principal_memberships
-        WHERE users_id = $1 AND principals_id = $2;
+        SELECT 1 FROM catalog.domain_members
+        WHERE user_id = $1 AND domain_id = $2;
         """,
         user_id,
         domain_id,
