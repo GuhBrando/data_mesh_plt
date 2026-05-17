@@ -94,7 +94,8 @@ jobs:
               "admin-password=${{ secrets.ADMIN_PASSWORD }}" \
               "app-user-password=${{ secrets.APP_USER_PASSWORD }}" \
               "user-password=${{ secrets.USER_PASSWORD }}" \
-              "jwt-secret-key=${{ secrets.JWT_SECRET_KEY }}"
+              "jwt-secret-key=${{ secrets.JWT_SECRET_KEY }}" \
+              "github-token=${{ secrets.GH_CONTRACT_TOKEN }}"
 
       - name: Update Container App with new image
         env:
@@ -115,7 +116,8 @@ jobs:
               "ADMIN_PASSWORD=secretref:admin-password" \
               "APP_USER_PASSWORD=secretref:app-user-password" \
               "USER_PASSWORD=secretref:user-password" \
-              "JWT_SECRET_KEY=secretref:jwt-secret-key"
+              "JWT_SECRET_KEY=secretref:jwt-secret-key" \
+              "GITHUB_TOKEN=secretref:github-token"
 
       - name: Configure CORS
         run: |
