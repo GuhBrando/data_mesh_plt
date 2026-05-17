@@ -43,7 +43,7 @@ jobs:
           echo "All required secrets are present."
 
       - name: Install dependencies
-        run: pip install "asyncpg==0.31.0" "bcrypt==5.0.0"
+        run: pip install "asyncpg==0.31.0" "bcrypt>=5.0.0"
 
       - name: Run seed script
         env:

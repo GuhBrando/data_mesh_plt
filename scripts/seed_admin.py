@@ -7,10 +7,13 @@ Safe to re-run: uses upsert so it updates the existing user if the email already
 Required env vars:
   PLATFORM_ADMIN_USER  - email address for the admin account
   PLATFORM_ADMIN_PASS  - plaintext password (hashed before storing)
+  ADMIN_PASSWORD       - database password for the admin DB role
 
 Optional env vars:
   PLATFORM_ADMIN_NAME  - display name (defaults to the part before @)
   MIGRATIONS_DB_HOST   - direct DB host (preferred; falls back to DB_HOST)
+
+Requires migrations up to 20260428000001_add_rbac.sql to be applied.
 """
 
 import asyncio
@@ -22,7 +25,7 @@ import asyncpg
 import bcrypt
 
 
-def _load_dotenv(path: Path = Path(".env")) -> None:
+def _load_dotenv(path: Path = Path(__file__).parent.parent / ".env") -> None:
     if not path.exists():
         return
     with path.open() as f:
@@ -50,6 +53,8 @@ async def seed() -> None:
     db_port = int(os.environ.get("DB_PORT", "5432"))
     db_user = os.environ.get("DB_USER", "admin")
     db_password = os.environ.get("ADMIN_PASSWORD")
+    if not db_password:
+        sys.exit("Error: ADMIN_PASSWORD is required")
     db_name = os.environ.get("DB_NAME", "data_mesh_plt")
     db_ssl = os.environ.get("DB_SSL_MODE", "require")
 
