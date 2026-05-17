@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.domain.entities.data_product import DataProduct
+from backend.domain.entities.user import User
 from backend.interface.dependencies import (
     get_create_data_product_use_case,
     get_delete_data_product_use_case,
@@ -16,6 +17,7 @@ from backend.interface.schemas.data_product import (
     DataProductResponseModel,
     DataProductUpdateModel,
 )
+from backend.interface.security import get_current_user
 from backend.use_cases.data_product.create import CreateDataProductUseCase
 from backend.use_cases.data_product.delete import DeleteDataProductUseCase
 from backend.use_cases.data_product.get import GetDataProductUseCase
@@ -40,6 +42,7 @@ def _to_response(product: DataProduct) -> DataProductResponseModel:
 async def create_data_product(
     body: DataProductCreateModel,
     use_case: CreateDataProductUseCase = Depends(get_create_data_product_use_case),
+    _: User = Depends(get_current_user),
 ):
     product = await use_case.execute(
         name=body.name,
@@ -52,6 +55,7 @@ async def create_data_product(
 @router.get("/data-products", response_model=List[DataProductResponseModel])
 async def list_data_products(
     use_case: ListDataProductsUseCase = Depends(get_list_data_products_use_case),
+    _: User = Depends(get_current_user),
 ):
     products = await use_case.execute()
     return [_to_response(p) for p in products]
@@ -61,6 +65,7 @@ async def list_data_products(
 async def get_data_product(
     product_id: uuid.UUID,
     use_case: GetDataProductUseCase = Depends(get_get_data_product_use_case),
+    _: User = Depends(get_current_user),
 ):
     product = await use_case.execute(product_id)
     if not product:
@@ -73,6 +78,7 @@ async def update_data_product(
     product_id: uuid.UUID,
     body: DataProductUpdateModel,
     use_case: UpdateDataProductUseCase = Depends(get_update_data_product_use_case),
+    _: User = Depends(get_current_user),
 ):
     product = await use_case.execute(
         product_id=product_id,
@@ -89,6 +95,7 @@ async def update_data_product(
 async def delete_data_product(
     product_id: uuid.UUID,
     use_case: DeleteDataProductUseCase = Depends(get_delete_data_product_use_case),
+    _: User = Depends(get_current_user),
 ):
     deleted = await use_case.execute(product_id)
     if not deleted:

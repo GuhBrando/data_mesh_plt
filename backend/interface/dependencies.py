@@ -1,5 +1,7 @@
 from fastapi import Depends
 
+from backend.infra.config import GITHUB_REPO, GITHUB_TOKEN
+from backend.infra.github_client import GitHubClient
 from backend.infra.postgres import get_db_connection
 from backend.infra.repositories.data_contract_repository import (
     PostgresDataContractRepository,
@@ -7,7 +9,17 @@ from backend.infra.repositories.data_contract_repository import (
 from backend.infra.repositories.data_product_repository import (
     PostgresDataProductRepository,
 )
+from backend.infra.repositories.domain_repository import PostgresDomainRepository
+from backend.infra.repositories.refresh_token_repository import (
+    PostgresRefreshTokenRepository,
+)
+from backend.infra.repositories.stakeholder_repository import (
+    PostgresStakeholderRepository,
+)
 from backend.infra.repositories.user_repository import PostgresUserRepository
+from backend.use_cases.auth.login import LoginUseCase
+from backend.use_cases.auth.logout import LogoutUseCase
+from backend.use_cases.auth.refresh import RefreshUseCase
 from backend.use_cases.data_contract.create import CreateDataContractUseCase
 from backend.use_cases.data_contract.delete import DeleteDataContractUseCase
 from backend.use_cases.data_contract.get import GetDataContractUseCase
@@ -18,11 +30,30 @@ from backend.use_cases.data_product.delete import DeleteDataProductUseCase
 from backend.use_cases.data_product.get import GetDataProductUseCase
 from backend.use_cases.data_product.list import ListDataProductsUseCase
 from backend.use_cases.data_product.update import UpdateDataProductUseCase
+from backend.use_cases.domain.add_member import AddDomainMemberUseCase
+from backend.use_cases.domain.create import CreateDomainUseCase
+from backend.use_cases.domain.delete import DeleteDomainUseCase
+from backend.use_cases.domain.list import ListDomainsUseCase
+from backend.use_cases.domain.remove_member import RemoveDomainMemberUseCase
+from backend.use_cases.domain.update import UpdateDomainUseCase
+from backend.use_cases.domain.update_member import UpdateDomainMemberUseCase
+from backend.use_cases.stakeholder.assign import AssignStakeholderUseCase
+from backend.use_cases.stakeholder.remove import RemoveStakeholderUseCase
+from backend.use_cases.user.assign_role import AssignRoleUseCase
 from backend.use_cases.user.create import CreateUserUseCase
 from backend.use_cases.user.delete import DeleteUserUseCase
 from backend.use_cases.user.get import GetUserUseCase
 from backend.use_cases.user.list import ListUsersUseCase
 from backend.use_cases.user.update import UpdateUserUseCase
+
+# --- GitHub client ---
+
+
+def get_github_client() -> GitHubClient | None:
+    if not GITHUB_TOKEN:
+        return None
+    return GitHubClient(token=GITHUB_TOKEN, repo=GITHUB_REPO)
+
 
 # --- Repositories ---
 
@@ -140,3 +171,117 @@ def get_delete_data_product_use_case(
     repo=Depends(get_data_product_repository),
 ) -> DeleteDataProductUseCase:
     return DeleteDataProductUseCase(repo)
+
+
+# --- Auth ---
+
+
+def get_refresh_token_repository(
+    db=Depends(get_db_connection),
+) -> PostgresRefreshTokenRepository:
+    return PostgresRefreshTokenRepository(db)
+
+
+def get_login_use_case(
+    user_repo=Depends(get_user_repository),
+    token_repo=Depends(get_refresh_token_repository),
+) -> LoginUseCase:
+    return LoginUseCase(user_repo=user_repo, token_repo=token_repo)
+
+
+def get_refresh_use_case(
+    token_repo=Depends(get_refresh_token_repository),
+) -> RefreshUseCase:
+    return RefreshUseCase(token_repo=token_repo)
+
+
+def get_logout_use_case(
+    token_repo=Depends(get_refresh_token_repository),
+) -> LogoutUseCase:
+    return LogoutUseCase(token_repo=token_repo)
+
+
+# --- Domain repository ---
+
+
+def get_domain_repository(db=Depends(get_db_connection)) -> PostgresDomainRepository:
+    return PostgresDomainRepository(db)
+
+
+# --- Stakeholder repository ---
+
+
+def get_stakeholder_repository(
+    db=Depends(get_db_connection),
+) -> PostgresStakeholderRepository:
+    return PostgresStakeholderRepository(db)
+
+
+# --- Role assignment use case ---
+
+
+def get_assign_role_use_case(
+    repo=Depends(get_user_repository),
+    token_repo=Depends(get_refresh_token_repository),
+) -> AssignRoleUseCase:
+    return AssignRoleUseCase(repo, token_repo)
+
+
+# --- Domain use cases ---
+
+
+def get_create_domain_use_case(
+    repo=Depends(get_domain_repository),
+) -> CreateDomainUseCase:
+    return CreateDomainUseCase(repo)
+
+
+def get_add_domain_member_use_case(
+    repo=Depends(get_domain_repository),
+) -> AddDomainMemberUseCase:
+    return AddDomainMemberUseCase(repo)
+
+
+def get_remove_domain_member_use_case(
+    repo=Depends(get_domain_repository),
+) -> RemoveDomainMemberUseCase:
+    return RemoveDomainMemberUseCase(repo)
+
+
+def get_list_domains_use_case(
+    repo=Depends(get_domain_repository),
+) -> ListDomainsUseCase:
+    return ListDomainsUseCase(repo)
+
+
+def get_update_domain_use_case(
+    repo=Depends(get_domain_repository),
+) -> UpdateDomainUseCase:
+    return UpdateDomainUseCase(repo)
+
+
+def get_delete_domain_use_case(
+    repo=Depends(get_domain_repository),
+) -> DeleteDomainUseCase:
+    return DeleteDomainUseCase(repo)
+
+
+def get_update_domain_member_use_case(
+    repo=Depends(get_domain_repository),
+) -> UpdateDomainMemberUseCase:
+    return UpdateDomainMemberUseCase(repo)
+
+
+# --- Stakeholder use cases ---
+
+
+def get_assign_stakeholder_use_case(
+    repo=Depends(get_stakeholder_repository),
+) -> AssignStakeholderUseCase:
+    return AssignStakeholderUseCase(repo)
+
+
+def get_remove_stakeholder_use_case(
+    repo=Depends(get_stakeholder_repository),
+) -> RemoveStakeholderUseCase:
+    return RemoveStakeholderUseCase(repo)

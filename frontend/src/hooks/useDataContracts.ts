@@ -1,13 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { get, post, put, del } from '../lib/api'
-import type { DataContract } from '../types'
+import { get, post, put, del, getText } from '../lib/api'
+import type { DataContract, DataContractInput } from '../types'
 
 const KEYS = {
   all: ['data-contracts'] as const,
   one: (id: string) => ['data-contracts', id] as const,
+  yaml: (id: string) => ['data-contracts', id, 'yaml'] as const,
 }
-
-// ---- Queries ----
 
 export function useDataContracts() {
   return useQuery<DataContract[]>({
@@ -24,30 +23,34 @@ export function useDataContract(id: string) {
   })
 }
 
-// ---- Mutations ----
+export function useDataContractYaml(id: string, enabled: boolean) {
+  return useQuery<string>({
+    queryKey: KEYS.yaml(id),
+    queryFn: () => getText(`/data-contracts/${id}/yaml`),
+    enabled: !!id && enabled,
+  })
+}
 
 export function useCreateDataContract() {
   const qc = useQueryClient()
-  return useMutation<DataContract, Error, Record<string, unknown>>({
-    mutationFn: (obj) => post<DataContract>('/data-contracts', { obj }),
+  return useMutation<DataContract, Error, DataContractInput>({
+    mutationFn: (input) => post<DataContract>('/data-contracts', input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: ['domains'] })
     },
   })
 }
 
 export function useUpdateDataContract() {
   const qc = useQueryClient()
-  return useMutation<
-    DataContract,
-    Error,
-    { id: string; obj: Record<string, unknown> }
-  >({
-    mutationFn: ({ id, obj }) =>
-      put<DataContract>(`/data-contracts/${id}`, { obj }),
+  return useMutation<DataContract, Error, { id: string } & Partial<DataContractInput>>({
+    mutationFn: ({ id, ...body }) =>
+      put<DataContract>(`/data-contracts/${id}`, body),
     onSuccess: (updated) => {
       qc.invalidateQueries({ queryKey: KEYS.all })
       qc.invalidateQueries({ queryKey: KEYS.one(updated.id) })
+      qc.invalidateQueries({ queryKey: KEYS.yaml(updated.id) })
     },
   })
 }
@@ -58,6 +61,7 @@ export function useDeleteDataContract() {
     mutationFn: (id) => del(`/data-contracts/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: ['domains'] })
     },
   })
 }

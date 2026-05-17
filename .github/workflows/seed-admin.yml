@@ -1,0 +1,54 @@
+name: Seed Admin User
+
+on:
+  workflow_dispatch:
+    inputs:
+      admin_name:
+        description: "Display name for the admin (optional — defaults to email prefix)"
+        required: false
+        default: ""
+
+env:
+  MIGRATIONS_DB_HOST: ep-divine-wind-aksyjv4m.c-3.us-west-2.aws.neon.tech
+  DB_PORT: "5432"
+  DB_USER: admin
+  DB_NAME: data_mesh_plt
+  DB_SSL_MODE: require
+
+jobs:
+  seed-admin:
+    name: Create / Update Platform Admin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate required secrets
+        env:
+          PLATFORM_ADMIN_USER: ${{ secrets.PLATFORM_ADMIN_USER }}
+          PLATFORM_ADMIN_PASS: ${{ secrets.PLATFORM_ADMIN_PASS }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          missing=()
+          [[ -z "$PLATFORM_ADMIN_USER" ]] && missing+=("PLATFORM_ADMIN_USER")
+          [[ -z "$PLATFORM_ADMIN_PASS" ]] && missing+=("PLATFORM_ADMIN_PASS")
+          [[ -z "$ADMIN_PASSWORD" ]] && missing+=("ADMIN_PASSWORD")
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "::error::Missing required secrets: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required secrets are present."
+
+      - name: Install dependencies
+        run: pip install "asyncpg==0.31.0" "bcrypt>=5.0.0"
+
+      - name: Run seed script
+        env:
+          PLATFORM_ADMIN_USER: ${{ secrets.PLATFORM_ADMIN_USER }}
+          PLATFORM_ADMIN_PASS: ${{ secrets.PLATFORM_ADMIN_PASS }}
+          PLATFORM_ADMIN_NAME: ${{ inputs.admin_name }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: python scripts/seed_admin.py

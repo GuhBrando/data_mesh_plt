@@ -1,63 +1,67 @@
+import re
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class UserCreateModel(BaseModel):
-    """
-    Represents the data required to create a new user.
-
-    Attributes:
-        username (str): The username of the user.
-        email (str): The email address of the user.
-        password (str): The password for the user account.
-    """
-
     username: str
     email: str
-    password: str | None = None
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one number")
+        if not re.search(r"[!@#$%^&*]", v):
+            raise ValueError(
+                "Password must contain at least one special character (!@#$%^&*)"
+            )
+        return v
 
 
 class UserResponseModel(BaseModel):
-    """
-    Represents the data returned as a response for user-related operations.
-
-    Attributes:
-        id (int): The unique identifier of the user.
-        username (str): The username of the user.
-        email (str): The email address of the user.
-    """
-
     id: uuid.UUID
     username: str
     email: str
+    role: str
 
 
 class UserUpdateModel(BaseModel):
-    """
-    Represents the data required to update an existing user.
-
-    Attributes:
-        username (str, optional): The new username of the user.
-        email (str, optional): The new email address of the user.
-        password (str, optional): The new password for the user account.
-    """
-
     username: str | None = None
     email: str | None = None
-    password: str | None = None
+
+
+class ChangePasswordModel(BaseModel):
+    current_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one number")
+        if not re.search(r"[!@#$%^&*]", v):
+            raise ValueError(
+                "Password must contain at least one special character (!@#$%^&*)"
+            )
+        return v
 
 
 class UserIdentity(BaseModel):
-    """
-    Represents the identity details of a user.
-
-    Attributes:
-        id (int): The unique identifier of the user.
-        name (str): The name of the user.
-        email (str): The email address of the user.
-    """
-
     id: uuid.UUID
     name: str
     email: str

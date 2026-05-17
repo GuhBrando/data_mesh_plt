@@ -141,6 +141,7 @@ export default function DataProductsList() {
           keyExtractor={(p) => p.id}
           onRowClick={(p) => navigate(`/data-products/${p.id}`)}
           emptyMessage="No products found."
+          mobileCardConfig={{ titleKey: 'name' }}
         />
       )}
 
@@ -182,7 +183,6 @@ export default function DataProductsList() {
             variant="danger"
             loading={deleteMutation.isPending}
             onClick={handleDelete}
-            className="btn-primary bg-red-600 hover:bg-red-700 focus:ring-red-500"
           >
             Delete
           </Button>

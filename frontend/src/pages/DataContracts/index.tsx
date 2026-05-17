@@ -3,19 +3,28 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, FileText, Trash2 } from 'lucide-react'
 import {
   useDataContracts,
-  useCreateDataContract,
   useDeleteDataContract,
 } from '../../hooks/useDataContracts'
 import PageHeader from '../../components/PageHeader'
 import Table from '../../components/ui/Table'
 import Button from '../../components/ui/Button'
+import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
-import DataContractForm from './DataContractForm'
 import type { DataContract } from '../../types'
 
-function truncateId(id: string) {
-  return id.slice(0, 8) + '…'
+const TIER_COLORS: Record<number, 'red' | 'yellow' | 'blue' | 'gray'> = {
+  1: 'red',
+  2: 'yellow',
+  3: 'blue',
+  4: 'gray',
+}
+
+const STATUS_COLORS: Record<string, 'gray' | 'yellow' | 'green' | 'red'> = {
+  draft: 'gray',
+  in_review: 'yellow',
+  active: 'green',
+  deprecated: 'red',
 }
 
 function formatDate(iso: string) {
@@ -28,17 +37,10 @@ function formatDate(iso: string) {
 
 export default function DataContractsList() {
   const navigate = useNavigate()
-  const [createOpen, setCreateOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<DataContract | null>(null)
 
   const { data: contracts = [], isLoading, error } = useDataContracts()
-  const createMutation = useCreateDataContract()
   const deleteMutation = useDeleteDataContract()
-
-  const handleCreate = async (obj: Record<string, unknown>) => {
-    await createMutation.mutateAsync(obj)
-    setCreateOpen(false)
-  }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -48,38 +50,40 @@ export default function DataContractsList() {
 
   const columns = [
     {
-      key: 'id',
-      header: 'ID',
+      key: 'title',
+      header: 'Title',
       render: (row: DataContract) => (
-        <span className="font-mono text-xs text-gray-500 dark:text-slate-400">
-          {truncateId(row.id)}
-        </span>
+        <span className="font-medium text-gray-800 dark:text-slate-200">{row.title}</span>
       ),
     },
     {
-      key: 'preview',
-      header: 'Contract Preview',
-      render: (row: DataContract) => {
-        const keys = Object.keys(row.obj)
-        if (keys.length === 0) return <span className="text-gray-400 dark:text-slate-500 italic">empty</span>
-        const firstKey = keys[0]
-        const firstVal = row.obj[firstKey]
-        return (
-          <span className="text-sm text-gray-700 dark:text-slate-300">
-            <span className="font-medium text-gray-500 dark:text-slate-400">{firstKey}:</span>{' '}
-            {String(firstVal).slice(0, 60)}
-            {keys.length > 1 && (
-              <span className="ml-1 text-xs text-gray-400 dark:text-slate-500">
-                +{keys.length - 1} more
-              </span>
-            )}
-          </span>
-        )
-      },
+      key: 'tier',
+      header: 'Tier',
+      render: (row: DataContract) => (
+        <Badge variant={TIER_COLORS[row.tier]}>Tier {row.tier}</Badge>
+      ),
+      className: 'w-24',
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (row: DataContract) => (
+        <Badge variant={STATUS_COLORS[row.status] ?? 'gray'}>
+          {row.status.replace('_', ' ')}
+        </Badge>
+      ),
+      className: 'w-28',
+    },
+    {
+      key: 'domain',
+      header: 'Domain',
+      render: (row: DataContract) => (
+        <span className="text-sm text-gray-600 dark:text-slate-300">{row.domain}</span>
+      ),
     },
     {
       key: 'created_at',
-      header: 'Created At',
+      header: 'Created',
       render: (row: DataContract) => (
         <span className="text-sm text-gray-500 dark:text-slate-400">{formatDate(row.created_at)}</span>
       ),
@@ -89,10 +93,7 @@ export default function DataContractsList() {
       header: '',
       render: (row: DataContract) => (
         <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setDeleteTarget(row)
-          }}
+          onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }}
           className="btn-danger"
           title="Delete"
         >
@@ -110,7 +111,7 @@ export default function DataContractsList() {
         title="Data Contracts"
         subtitle={`${contracts.length} contract${contracts.length !== 1 ? 's' : ''}`}
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
+          <Button onClick={() => navigate('/data-contracts/new')}>
             <Plus size={16} />
             New Contract
           </Button>
@@ -118,9 +119,7 @@ export default function DataContractsList() {
       />
 
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <Spinner size="lg" />
-        </div>
+        <div className="flex justify-center py-20"><Spinner size="lg" /></div>
       ) : error ? (
         <div className="text-center py-16">
           <p className="text-red-500">{error.message}</p>
@@ -132,7 +131,7 @@ export default function DataContractsList() {
           <p className="text-sm text-gray-400 dark:text-slate-500 mb-4">
             Create your first contract to get started.
           </p>
-          <Button onClick={() => setCreateOpen(true)}>
+          <Button onClick={() => navigate('/data-contracts/new')}>
             <Plus size={16} />
             New Contract
           </Button>
@@ -144,29 +143,10 @@ export default function DataContractsList() {
           keyExtractor={(c) => c.id}
           onRowClick={(c) => navigate(`/data-contracts/${c.id}`)}
           emptyMessage="No contracts found."
+          mobileCardConfig={{ titleKey: 'title', badgeKey: 'status' }}
         />
       )}
 
-      {/* Create Modal */}
-      <Modal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        title="New Data Contract"
-        size="lg"
-      >
-        <DataContractForm
-          onSubmit={handleCreate}
-          onCancel={() => setCreateOpen(false)}
-          isSubmitting={createMutation.isPending}
-        />
-        {createMutation.isError && (
-          <p className="mt-3 text-sm text-red-500">
-            {createMutation.error.message}
-          </p>
-        )}
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
       <Modal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
@@ -174,33 +154,18 @@ export default function DataContractsList() {
         size="sm"
       >
         <p className="text-sm text-gray-600 dark:text-slate-300 mb-2">
-          Are you sure you want to delete contract{' '}
-          <span className="font-mono font-medium">
-            {deleteTarget ? truncateId(deleteTarget.id) : ''}
-          </span>
-          ?
+          Are you sure you want to delete{' '}
+          <span className="font-medium">{deleteTarget?.title}</span>?
         </p>
         <p className="text-xs text-gray-400 dark:text-slate-500 mb-6">This action cannot be undone.</p>
         <div className="flex justify-end gap-3">
-          <Button
-            variant="secondary"
-            onClick={() => setDeleteTarget(null)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            loading={deleteMutation.isPending}
-            onClick={handleDelete}
-            className="btn-primary bg-red-600 hover:bg-red-700 focus:ring-red-500"
-          >
+          <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          <Button variant="danger" loading={deleteMutation.isPending} onClick={handleDelete}>
             Delete
           </Button>
         </div>
         {deleteMutation.isError && (
-          <p className="mt-3 text-sm text-red-500">
-            {deleteMutation.error.message}
-          </p>
+          <p className="mt-3 text-sm text-red-500">{deleteMutation.error.message}</p>
         )}
       </Modal>
     </div>

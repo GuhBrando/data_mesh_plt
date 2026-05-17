@@ -18,6 +18,7 @@ interface UserFormProps {
   onSubmit: (values: FormValues) => void
   onCancel: () => void
   isSubmitting: boolean
+  apiError?: string
 }
 
 export default function UserForm({
@@ -25,11 +26,13 @@ export default function UserForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  apiError,
 }: UserFormProps) {
   const {
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -43,6 +46,12 @@ export default function UserForm({
       reset({ username: defaultValues.username, email: defaultValues.email })
     }
   }, [defaultValues, reset])
+
+  useEffect(() => {
+    if (apiError && /email already in use/i.test(apiError)) {
+      setError('email', { message: 'This email is already in use' })
+    }
+  }, [apiError, setError])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -59,6 +68,10 @@ export default function UserForm({
         error={errors.email?.message}
         {...register('email')}
       />
+
+      {apiError && !/email already in use/i.test(apiError) && (
+        <p className="text-sm text-red-500 dark:text-red-400">{apiError}</p>
+      )}
 
       <div className="flex justify-end gap-3 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>

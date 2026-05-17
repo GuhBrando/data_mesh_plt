@@ -187,10 +187,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <ul className="space-y-2">
-              {recentContracts.map((c) => {
-                const firstKey = Object.keys(c.obj)[0] ?? '(empty)'
-                const firstVal = c.obj[firstKey]
-                return (
+              {recentContracts.map((c) => (
                   <li
                     key={c.id}
                     onClick={() => navigate(`/data-contracts/${c.id}`)}
@@ -198,19 +195,17 @@ export default function Dashboard() {
                   >
                     <div className="min-w-0">
                       <p className="text-xs font-mono text-gray-500 dark:text-slate-400 truncate">
-                        {c.id.slice(0, 8)}…
+                        {c.domain}
                       </p>
                       <p className="text-sm font-medium text-gray-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
-                        <span className="text-gray-400 dark:text-slate-500">{firstKey}:</span>{' '}
-                        {String(firstVal).slice(0, 30)}
+                        {c.title}
                       </p>
                     </div>
                     <Badge variant="purple" className="ml-2 shrink-0">
                       {formatDate(c.created_at)}
                     </Badge>
                   </li>
-                )
-              })}
+              ))}
             </ul>
           )}
         </Card>
