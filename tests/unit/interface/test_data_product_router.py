@@ -144,6 +144,10 @@ def test_delete_data_product(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = True
     app.dependency_overrides[get_delete_data_product_use_case] = lambda: mock_uc
+    mock_get = AsyncMock()
+    mock_get.execute.return_value = _product()
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_get
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.delete(f"/api/v1/data-products/{PRODUCT_ID}")
     assert resp.status_code == 204
 
@@ -152,6 +156,10 @@ def test_delete_data_product_not_found(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = False
     app.dependency_overrides[get_delete_data_product_use_case] = lambda: mock_uc
+    mock_get = AsyncMock()
+    mock_get.execute.return_value = None
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_get
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.delete(f"/api/v1/data-products/{uuid.uuid4()}")
     assert resp.status_code == 404
 
@@ -320,3 +328,35 @@ def test_update_data_product_backfills_repo_when_missing(admin_client):
     assert (
         resp.json()["repo_url"] == "https://github.com/acme/dp-marketing-updated"
     )
+
+
+def test_delete_data_product_archives_repo(admin_client):
+    p = _product()
+    p.repo_url = "https://github.com/acme/dp-marketing-orders-product"
+    mock_get_uc = AsyncMock()
+    mock_get_uc.execute.return_value = p
+    mock_delete_uc = AsyncMock()
+    mock_delete_uc.execute.return_value = True
+    mock_github = AsyncMock()
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_get_uc
+    app.dependency_overrides[get_delete_data_product_use_case] = lambda: mock_delete_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    resp = admin_client.delete(f"/api/v1/data-products/{PRODUCT_ID}")
+    assert resp.status_code == 204
+    mock_github.archive_repo.assert_awaited_once_with(
+        "acme/dp-marketing-orders-product"
+    )
+
+
+def test_delete_data_product_without_repo_url_does_not_archive(admin_client):
+    mock_get_uc = AsyncMock()
+    mock_get_uc.execute.return_value = _product()  # repo_url=None
+    mock_delete_uc = AsyncMock()
+    mock_delete_uc.execute.return_value = True
+    mock_github = AsyncMock()
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_get_uc
+    app.dependency_overrides[get_delete_data_product_use_case] = lambda: mock_delete_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    resp = admin_client.delete(f"/api/v1/data-products/{PRODUCT_ID}")
+    assert resp.status_code == 204
+    mock_github.archive_repo.assert_not_awaited()

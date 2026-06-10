@@ -196,8 +196,14 @@ async def update_data_product(
 async def delete_data_product(
     product_id: uuid.UUID,
     use_case: DeleteDataProductUseCase = Depends(get_delete_data_product_use_case),
+    get_use_case: GetDataProductUseCase = Depends(get_get_data_product_use_case),
+    github: GitHubClient | None = Depends(get_github_client),
     _: User = Depends(get_current_user),
 ):
+    product = await get_use_case.execute(product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Data product not found")
     deleted = await use_case.execute(product_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Data product not found")
+    await _archive_product_repo(github, product)
