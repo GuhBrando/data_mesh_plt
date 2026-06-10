@@ -12,8 +12,11 @@ from backend.domain.value_objects.user_role import UserRole
 from backend.infra.postgres import get_db_connection
 from backend.interface.dependencies import (
     get_create_data_product_use_case,
+    get_data_contract_repository,
+    get_data_product_repository,
     get_delete_data_product_use_case,
     get_get_data_product_use_case,
+    get_github_client,
     get_list_data_products_use_case,
     get_update_data_product_use_case,
 )
@@ -46,6 +49,11 @@ def _admin() -> User:
     )
 
 
+class _StubContract:
+    def __init__(self, domain: str = "Marketing"):
+        self.domain = domain
+
+
 @pytest.fixture
 def admin_client():
     mock_db = AsyncMock()
@@ -59,6 +67,7 @@ def test_create_data_product(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = _product(name="Invoices Product")
     app.dependency_overrides[get_create_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.post(
         "/api/v1/data-products",
         json={
@@ -151,20 +160,6 @@ def test_get_data_product_includes_repo_url(admin_client):
     resp = admin_client.get(f"/api/v1/data-products/{PRODUCT_ID}")
     assert resp.status_code == 200
     assert resp.json()["repo_url"] == "https://github.com/acme/dp-x"
-
-
-from unittest.mock import patch as _patch  # noqa: E402, F401
-
-from backend.interface.dependencies import (  # noqa: E402
-    get_data_contract_repository,
-    get_data_product_repository,
-    get_github_client,
-)
-
-
-class _StubContract:
-    def __init__(self, domain: str = "Marketing"):
-        self.domain = domain
 
 
 def test_create_data_product_triggers_repo_provisioning(admin_client):
