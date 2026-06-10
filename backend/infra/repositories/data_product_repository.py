@@ -3,9 +3,7 @@ import uuid
 from backend.domain.entities.data_product import DataProduct
 from backend.domain.interfaces.data_product_repository import IDataProductRepository
 
-_RETURNING = (
-    "id, name, description, data_contracts_id, repo_url, created_at, updated_at"
-)
+_COLUMNS = "id, name, description, data_contracts_id, repo_url, created_at, updated_at"
 
 
 def _row_to_entity(row) -> DataProduct:
@@ -32,7 +30,7 @@ class PostgresDataProductRepository(IDataProductRepository):
                 f"""
                 INSERT INTO catalog.data_products (name, description, data_contracts_id)
                 VALUES ($1, $2, $3)
-                RETURNING {_RETURNING};
+                RETURNING {_COLUMNS};
                 """,
                 name,
                 description,
@@ -43,7 +41,7 @@ class PostgresDataProductRepository(IDataProductRepository):
     async def get_by_id(self, product_id: uuid.UUID) -> DataProduct | None:
         row = await self.db.fetchrow(
             f"""
-            SELECT {_RETURNING}
+            SELECT {_COLUMNS}
             FROM catalog.data_products WHERE id = $1;
             """,
             product_id,
@@ -51,7 +49,7 @@ class PostgresDataProductRepository(IDataProductRepository):
         return _row_to_entity(row) if row else None
 
     async def list(self) -> list[DataProduct]:
-        rows = await self.db.fetch(f"SELECT {_RETURNING} FROM catalog.data_products;")
+        rows = await self.db.fetch(f"SELECT {_COLUMNS} FROM catalog.data_products;")
         return [_row_to_entity(r) for r in rows]
 
     async def update(
@@ -81,7 +79,7 @@ class PostgresDataProductRepository(IDataProductRepository):
                 UPDATE catalog.data_products
                 SET {set_clauses}, updated_at = now()
                 WHERE id = ${len(values)}
-                RETURNING {_RETURNING};
+                RETURNING {_COLUMNS};
                 """,
                 *values,
             )
@@ -97,8 +95,10 @@ class PostgresDataProductRepository(IDataProductRepository):
 
     async def update_repo_url(self, product_id: uuid.UUID, repo_url: str) -> None:
         async with self.db.transaction():
-            await self.db.execute(
+            result = await self.db.execute(
                 "UPDATE catalog.data_products SET repo_url = $1 WHERE id = $2;",
                 repo_url,
                 product_id,
             )
+            if result != "UPDATE 1":
+                raise ValueError(f"No data product with id {product_id}")
