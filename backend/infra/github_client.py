@@ -158,3 +158,12 @@ class GitHubClient:
                     json=payload,
                 )
                 self._raise_for_status(r)
+
+    async def archive_repo(self, repo_full_name: str) -> None:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.patch(
+                f"{_API}/repos/{repo_full_name}",
+                headers=self._headers,
+                json={"archived": True},
+            )
+            self._raise_for_status(r)

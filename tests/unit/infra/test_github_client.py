@@ -154,3 +154,29 @@ async def test_push_scaffold_raises_on_failure(client):
     ):
         with pytest.raises(RuntimeError):
             await client.push_scaffold("acme/dp-x", {"README.md": "hello"})
+
+
+async def test_archive_repo_patches_archived_true(client):
+    mock_http = AsyncMock()
+    mock_http.patch = AsyncMock(return_value=_resp(200, {"archived": True}))
+    with patch(
+        "backend.infra.github_client.httpx.AsyncClient",
+        return_value=_async_client_ctx(mock_http),
+    ):
+        await client.archive_repo("acme/dp-x")
+    mock_http.patch.assert_awaited_once()
+    url = mock_http.patch.await_args.args[0]
+    assert url.endswith("/repos/acme/dp-x")
+    body = mock_http.patch.await_args.kwargs["json"]
+    assert body == {"archived": True}
+
+
+async def test_archive_repo_raises_on_failure(client):
+    mock_http = AsyncMock()
+    mock_http.patch = AsyncMock(return_value=_resp(500, {"message": "boom"}))
+    with patch(
+        "backend.infra.github_client.httpx.AsyncClient",
+        return_value=_async_client_ctx(mock_http),
+    ):
+        with pytest.raises(RuntimeError):
+            await client.archive_repo("acme/dp-x")
