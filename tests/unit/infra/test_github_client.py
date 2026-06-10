@@ -124,3 +124,33 @@ async def test_create_product_repo_raises_on_other_failure(client):
     ):
         with pytest.raises(RuntimeError):
             await client.create_product_repo("dp-x", "desc")
+
+
+async def test_push_scaffold_puts_each_file(client):
+    mock_http = AsyncMock()
+    mock_http.get = AsyncMock(return_value=_resp(404))  # no existing sha
+    mock_http.put = AsyncMock(return_value=_resp(201, {}))
+    with patch(
+        "backend.infra.github_client.httpx.AsyncClient",
+        return_value=_async_client_ctx(mock_http),
+    ):
+        await client.push_scaffold(
+            "acme/dp-x",
+            {"README.md": "hello", "pipeline/.gitkeep": ""},
+        )
+    assert mock_http.put.await_count == 2
+    urls = {call.args[0] for call in mock_http.put.await_args_list}
+    assert any(u.endswith("/contents/README.md") for u in urls)
+    assert any(u.endswith("/contents/pipeline/.gitkeep") for u in urls)
+
+
+async def test_push_scaffold_raises_on_failure(client):
+    mock_http = AsyncMock()
+    mock_http.get = AsyncMock(return_value=_resp(404))
+    mock_http.put = AsyncMock(return_value=_resp(500, {"message": "boom"}))
+    with patch(
+        "backend.infra.github_client.httpx.AsyncClient",
+        return_value=_async_client_ctx(mock_http),
+    ):
+        with pytest.raises(RuntimeError):
+            await client.push_scaffold("acme/dp-x", {"README.md": "hello"})

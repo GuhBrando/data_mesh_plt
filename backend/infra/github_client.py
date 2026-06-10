@@ -138,3 +138,23 @@ class GitHubClient:
                 "html_url": data["html_url"],
                 "full_name": data["full_name"],
             }
+
+    async def push_scaffold(self, repo_full_name: str, files: dict[str, str]) -> None:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            for path, content in files.items():
+                sha_r = await client.get(
+                    f"{_API}/repos/{repo_full_name}/contents/{path}",
+                    headers=self._headers,
+                )
+                payload: dict = {
+                    "message": f"Scaffold {path}",
+                    "content": base64.b64encode(content.encode()).decode(),
+                }
+                if sha_r.status_code == 200:
+                    payload["sha"] = sha_r.json().get("sha")
+                r = await client.put(
+                    f"{_API}/repos/{repo_full_name}/contents/{path}",
+                    headers=self._headers,
+                    json=payload,
+                )
+                self._raise_for_status(r)
