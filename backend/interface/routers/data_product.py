@@ -33,6 +33,7 @@ def _to_response(product: DataProduct) -> DataProductResponseModel:
         name=product.name,
         description=product.description,
         data_contracts_id=product.data_contracts_id,
+        repo_url=product.repo_url,
         created_at=product.created_at,
         updated_at=product.updated_at,
     )

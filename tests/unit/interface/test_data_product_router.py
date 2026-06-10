@@ -141,3 +141,13 @@ def test_delete_data_product_not_found(admin_client):
     app.dependency_overrides[get_delete_data_product_use_case] = lambda: mock_uc
     resp = admin_client.delete(f"/api/v1/data-products/{uuid.uuid4()}")
     assert resp.status_code == 404
+
+
+def test_get_data_product_includes_repo_url(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product()
+    mock_uc.execute.return_value.repo_url = "https://github.com/acme/dp-x"
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_uc
+    resp = admin_client.get(f"/api/v1/data-products/{PRODUCT_ID}")
+    assert resp.status_code == 200
+    assert resp.json()["repo_url"] == "https://github.com/acme/dp-x"
