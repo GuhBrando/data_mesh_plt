@@ -1,3 +1,4 @@
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -10,8 +11,9 @@ def _resp(status: int, json_body: dict | None = None) -> MagicMock:
     r = MagicMock(spec=httpx.Response)
     r.status_code = status
     r.is_success = 200 <= status < 300
-    r.json.return_value = json_body or {}
-    r.text = str(json_body or "")
+    body = json_body if json_body is not None else {}
+    r.json.return_value = body
+    r.text = json.dumps(body)
     return r
 
 
