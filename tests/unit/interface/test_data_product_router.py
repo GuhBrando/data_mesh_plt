@@ -121,6 +121,7 @@ def test_update_data_product(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = _product(name="Updated")
     app.dependency_overrides[get_update_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.put(
         f"/api/v1/data-products/{PRODUCT_ID}", json={"name": "Updated"}
     )
@@ -132,6 +133,7 @@ def test_update_data_product_not_found(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = None
     app.dependency_overrides[get_update_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.put(
         f"/api/v1/data-products/{uuid.uuid4()}", json={"name": "X"}
     )
@@ -292,3 +294,29 @@ def test_list_data_products_does_not_backfill(admin_client):
     resp = admin_client.get("/api/v1/data-products")
     assert resp.status_code == 200
     mock_github.create_product_repo.assert_not_awaited()
+
+
+def test_update_data_product_backfills_repo_when_missing(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product(name="Updated")
+    mock_github = AsyncMock()
+    mock_github.create_product_repo.return_value = {
+        "html_url": "https://github.com/acme/dp-marketing-updated",
+        "full_name": "acme/dp-marketing-updated",
+    }
+    mock_github.push_scaffold = AsyncMock()
+    mock_contract_repo = AsyncMock()
+    mock_contract_repo.get_by_id.return_value = _StubContract("Marketing")
+    mock_product_repo = AsyncMock()
+    app.dependency_overrides[get_update_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    app.dependency_overrides[get_data_contract_repository] = lambda: mock_contract_repo
+    app.dependency_overrides[get_data_product_repository] = lambda: mock_product_repo
+    resp = admin_client.put(
+        f"/api/v1/data-products/{PRODUCT_ID}", json={"name": "Updated"}
+    )
+    assert resp.status_code == 200
+    mock_github.create_product_repo.assert_awaited_once()
+    assert (
+        resp.json()["repo_url"] == "https://github.com/acme/dp-marketing-updated"
+    )

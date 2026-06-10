@@ -175,6 +175,9 @@ async def update_data_product(
     product_id: uuid.UUID,
     body: DataProductUpdateModel,
     use_case: UpdateDataProductUseCase = Depends(get_update_data_product_use_case),
+    product_repo: IDataProductRepository = Depends(get_data_product_repository),
+    contract_repo: IDataContractRepository = Depends(get_data_contract_repository),
+    github: GitHubClient | None = Depends(get_github_client),
     _: User = Depends(get_current_user),
 ):
     product = await use_case.execute(
@@ -185,6 +188,7 @@ async def update_data_product(
     )
     if not product:
         raise HTTPException(status_code=404, detail="Data product not found")
+    await _ensure_product_repo(github, product, product_repo, contract_repo)
     return _to_response(product)
 
 
