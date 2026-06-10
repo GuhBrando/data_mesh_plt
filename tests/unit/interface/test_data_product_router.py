@@ -151,3 +151,95 @@ def test_get_data_product_includes_repo_url(admin_client):
     resp = admin_client.get(f"/api/v1/data-products/{PRODUCT_ID}")
     assert resp.status_code == 200
     assert resp.json()["repo_url"] == "https://github.com/acme/dp-x"
+
+
+from unittest.mock import patch as _patch  # noqa: E402, F401
+
+from backend.interface.dependencies import (  # noqa: E402
+    get_data_contract_repository,
+    get_data_product_repository,
+    get_github_client,
+)
+
+
+class _StubContract:
+    def __init__(self, domain: str = "Marketing"):
+        self.domain = domain
+
+
+def test_create_data_product_triggers_repo_provisioning(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product(name="Attribution Model")
+    mock_github = AsyncMock()
+    mock_github.create_product_repo.return_value = {
+        "html_url": "https://github.com/acme/dp-marketing-attribution-model",
+        "full_name": "acme/dp-marketing-attribution-model",
+    }
+    mock_github.push_scaffold = AsyncMock()
+    mock_contract_repo = AsyncMock()
+    mock_contract_repo.get_by_id.return_value = _StubContract("Marketing")
+    mock_product_repo = AsyncMock()
+
+    app.dependency_overrides[get_create_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    app.dependency_overrides[get_data_contract_repository] = lambda: mock_contract_repo
+    app.dependency_overrides[get_data_product_repository] = lambda: mock_product_repo
+
+    resp = admin_client.post(
+        "/api/v1/data-products",
+        json={
+            "name": "Attribution Model",
+            "description": "desc",
+            "data_contracts_id": str(CONTRACT_ID),
+        },
+    )
+    assert resp.status_code == 201
+    mock_github.create_product_repo.assert_awaited_once()
+    args, kwargs = mock_github.create_product_repo.await_args
+    assert args[0] == "dp-marketing-attribution-model"
+    mock_github.push_scaffold.assert_awaited_once()
+    mock_product_repo.update_repo_url.assert_awaited_once()
+    assert (
+        resp.json()["repo_url"]
+        == "https://github.com/acme/dp-marketing-attribution-model"
+    )
+
+
+def test_create_data_product_warns_when_github_unavailable(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product()
+    app.dependency_overrides[get_create_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
+    app.dependency_overrides[get_data_contract_repository] = lambda: AsyncMock()
+    app.dependency_overrides[get_data_product_repository] = lambda: AsyncMock()
+    resp = admin_client.post(
+        "/api/v1/data-products",
+        json={
+            "name": "X",
+            "description": "y",
+            "data_contracts_id": str(CONTRACT_ID),
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["repo_url"] is None
+
+
+def test_create_data_product_swallows_github_errors(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product()
+    mock_github = AsyncMock()
+    mock_github.create_product_repo.side_effect = RuntimeError("boom")
+    mock_contract_repo = AsyncMock()
+    mock_contract_repo.get_by_id.return_value = _StubContract("Marketing")
+    mock_product_repo = AsyncMock()
+    app.dependency_overrides[get_create_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    app.dependency_overrides[get_data_contract_repository] = lambda: mock_contract_repo
+    app.dependency_overrides[get_data_product_repository] = lambda: mock_product_repo
+    resp = admin_client.post(
+        "/api/v1/data-products",
+        json={"name": "X", "description": "y", "data_contracts_id": str(CONTRACT_ID)},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["repo_url"] is None
+    mock_product_repo.update_repo_url.assert_not_awaited()

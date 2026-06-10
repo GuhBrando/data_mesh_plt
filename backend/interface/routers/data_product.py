@@ -12,8 +12,11 @@ from backend.domain.interfaces.data_product_repository import IDataProductReposi
 from backend.infra.github_client import GitHubClient
 from backend.interface.dependencies import (
     get_create_data_product_use_case,
+    get_data_contract_repository,
+    get_data_product_repository,
     get_delete_data_product_use_case,
     get_get_data_product_use_case,
+    get_github_client,
     get_list_data_products_use_case,
     get_update_data_product_use_case,
 )
@@ -128,6 +131,9 @@ def _to_response(product: DataProduct) -> DataProductResponseModel:
 async def create_data_product(
     body: DataProductCreateModel,
     use_case: CreateDataProductUseCase = Depends(get_create_data_product_use_case),
+    product_repo: IDataProductRepository = Depends(get_data_product_repository),
+    contract_repo: IDataContractRepository = Depends(get_data_contract_repository),
+    github: GitHubClient | None = Depends(get_github_client),
     _: User = Depends(get_current_user),
 ):
     product = await use_case.execute(
@@ -135,6 +141,7 @@ async def create_data_product(
         description=body.description,
         data_contracts_id=body.data_contracts_id,
     )
+    await _ensure_product_repo(github, product, product_repo, contract_repo)
     return _to_response(product)
 
 
