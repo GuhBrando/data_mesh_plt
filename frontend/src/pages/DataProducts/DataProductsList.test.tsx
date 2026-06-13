@@ -116,6 +116,6 @@ describe('DataProductsList — GitHub button', () => {
 
     fireEvent.click(screen.getByTitle('Open GitHub repo'))
 
-    expect(mockNavigate).not.toHaveBeenCalledWith(`/data-products/${productWithRepo.id}`)
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 })
