@@ -92,7 +92,7 @@ export default function DataProductsList() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center justify-center p-1.5 rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-700 transition-colors"
+            className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-slate-100 transition-colors"
             title="Open GitHub repo"
             aria-label="Open GitHub repo"
           >
