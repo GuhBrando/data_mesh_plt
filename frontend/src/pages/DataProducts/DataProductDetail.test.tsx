@@ -88,4 +88,16 @@ describe('DataProductDetail — GitHub button', () => {
 
     expect(screen.queryByRole('link', { name: /github/i })).not.toBeInTheDocument()
   })
+
+  it('does not render a GitHub link when repo_url is an empty string', () => {
+    vi.mocked(useDataProduct).mockReturnValue({
+      data: { ...baseProduct, repo_url: '' },
+      isLoading: false,
+      error: null,
+    } as unknown)
+
+    renderDetail()
+
+    expect(screen.queryByRole('link', { name: /github/i })).not.toBeInTheDocument()
+  })
 })

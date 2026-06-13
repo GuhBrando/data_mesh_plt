@@ -84,6 +84,7 @@ export default function DataProductDetail() {
                 href={product.repo_url}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="View GitHub repository"
                 className="btn-secondary text-xs px-3 py-1.5"
               >
                 <Github size={14} />
