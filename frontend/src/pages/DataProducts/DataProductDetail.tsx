@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Edit2, Trash2, Calendar, Clock, FileText } from 'lucide-react'
+import { Edit2, Trash2, Calendar, Clock, FileText, Github } from 'lucide-react'
 import {
   useDataProduct,
   useUpdateDataProduct,
@@ -79,6 +79,17 @@ export default function DataProductDetail() {
         backTo="/data-products"
         actions={
           <>
+            {product.repo_url && (
+              <a
+                href={product.repo_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary text-xs px-3 py-1.5"
+              >
+                <Github size={14} />
+                GitHub
+              </a>
+            )}
             <Button
               variant="secondary"
               size="sm"
