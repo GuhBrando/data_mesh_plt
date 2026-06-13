@@ -94,6 +94,7 @@ export default function DataProductsList() {
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center justify-center p-1.5 rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-700 transition-colors"
             title="Open GitHub repo"
+            aria-label="Open GitHub repo"
           >
             <Github size={13} />
           </a>
