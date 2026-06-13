@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Package, Trash2 } from 'lucide-react'
+import { Plus, Package, Trash2, Github } from 'lucide-react'
 import {
   useDataProducts,
   useCreateDataProduct,
@@ -80,6 +80,25 @@ export default function DataProductsList() {
       render: (row: DataProduct) => (
         <span className="text-sm text-gray-500 dark:text-slate-400">{formatDate(row.created_at)}</span>
       ),
+    },
+    {
+      key: 'github',
+      header: '',
+      mobileHidden: true,
+      render: (row: DataProduct) =>
+        row.repo_url ? (
+          <a
+            href={row.repo_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center justify-center p-1.5 rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-700 transition-colors"
+            title="Open GitHub repo"
+          >
+            <Github size={13} />
+          </a>
+        ) : null,
+      className: 'w-8',
     },
     {
       key: 'actions',
