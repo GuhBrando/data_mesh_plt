@@ -1,7 +1,18 @@
+import os
 from collections.abc import Callable
 from unittest.mock import AsyncMock
 
 import pytest
+
+# Provide a deterministic JWT secret for the test suite before any backend
+# module (which binds JWT_SECRET_KEY at import time) is loaded. This runs at
+# conftest import, ahead of test modules importing the backend. setdefault keeps
+# any real value from the environment/.env, while guaranteeing a non-empty key
+# in CI — PyJWT >=2.13 raises InvalidKeyError on an empty HMAC key. 32+ bytes
+# also satisfies the SHA256 minimum-length recommendation.
+os.environ.setdefault(
+    "JWT_SECRET_KEY", "test-jwt-secret-key-not-for-production-use-only"
+)
 
 
 class _QueryGuard:
