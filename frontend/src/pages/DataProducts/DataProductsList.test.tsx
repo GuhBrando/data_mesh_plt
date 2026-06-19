@@ -57,13 +57,13 @@ describe('DataProductsList — GitHub button', () => {
       isPending: false,
       isError: false,
       error: null,
-    } as unknown)
+    } as never)
     vi.mocked(useDeleteDataProduct).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
       isError: false,
       error: null,
-    } as unknown)
+    } as never)
   })
 
   it('renders a GitHub link for a row that has repo_url', () => {
@@ -71,7 +71,7 @@ describe('DataProductsList — GitHub button', () => {
       data: [productWithRepo],
       isLoading: false,
       error: null,
-    } as unknown)
+    } as never)
 
     renderList()
 
@@ -86,7 +86,7 @@ describe('DataProductsList — GitHub button', () => {
       data: [productWithoutRepo],
       isLoading: false,
       error: null,
-    } as unknown)
+    } as never)
 
     renderList()
 
@@ -98,7 +98,7 @@ describe('DataProductsList — GitHub button', () => {
       data: [productWithRepo, productWithoutRepo],
       isLoading: false,
       error: null,
-    } as unknown)
+    } as never)
 
     renderList()
 
@@ -110,7 +110,7 @@ describe('DataProductsList — GitHub button', () => {
       data: [productWithRepo],
       isLoading: false,
       error: null,
-    } as unknown)
+    } as never)
 
     renderList()
 

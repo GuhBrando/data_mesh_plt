@@ -41,13 +41,13 @@ describe('DataProductDetail — GitHub button', () => {
       isPending: false,
       isError: false,
       error: null,
-    } as unknown)
+    } as never)
     vi.mocked(useDeleteDataProduct).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
       isError: false,
       error: null,
-    } as unknown)
+    } as never)
   })
 
   it('renders a GitHub link when repo_url is a non-empty string', () => {
@@ -55,7 +55,7 @@ describe('DataProductDetail — GitHub button', () => {
       data: { ...baseProduct, repo_url: 'https://github.com/org/dp-test' },
       isLoading: false,
       error: null,
-    } as unknown)
+    } as never)
 
     renderDetail()
 
@@ -70,7 +70,7 @@ describe('DataProductDetail — GitHub button', () => {
       data: { ...baseProduct, repo_url: null },
       isLoading: false,
       error: null,
-    } as unknown)
+    } as never)
 
     renderDetail()
 
@@ -82,7 +82,7 @@ describe('DataProductDetail — GitHub button', () => {
       data: { ...baseProduct },
       isLoading: false,
       error: null,
-    } as unknown)
+    } as never)
 
     renderDetail()
 
@@ -94,7 +94,7 @@ describe('DataProductDetail — GitHub button', () => {
       data: { ...baseProduct, repo_url: '' },
       isLoading: false,
       error: null,
-    } as unknown)
+    } as never)
 
     renderDetail()
 
