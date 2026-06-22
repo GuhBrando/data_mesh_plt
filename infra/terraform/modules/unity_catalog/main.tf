@@ -9,7 +9,7 @@ resource "databricks_metastore" "this" {
 resource "databricks_metastore_assignment" "this" {
   provider     = databricks.account
   metastore_id = databricks_metastore.this.id
-  workspace_id = element(split("/", var.workspace_id), length(split("/", var.workspace_id)) - 1)
+  workspace_id = var.workspace_numeric_id
 }
 
 # --- Storage credential via Access Connector (workspace-level) ---
@@ -40,11 +40,18 @@ resource "databricks_catalog" "this" {
   comment      = "Managed by Terraform — ${upper(each.key)} environment"
 }
 
+resource "databricks_service_principal" "devops" {
+  provider       = databricks.account
+  application_id = var.devops_principal
+  display_name   = "dmplt-devops"
+}
+
 # devops automation privileges on each catalog.
 resource "databricks_grants" "devops" {
-  provider = databricks.workspace
-  for_each = databricks_catalog.this
-  catalog  = each.value.name
+  provider   = databricks.workspace
+  for_each   = databricks_catalog.this
+  catalog    = each.value.name
+  depends_on = [databricks_service_principal.devops]
   grant {
     principal  = var.devops_principal
     privileges = ["USE_CATALOG", "USE_SCHEMA", "CREATE_SCHEMA"]

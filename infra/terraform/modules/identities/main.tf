@@ -27,11 +27,6 @@ resource "azuread_service_principal" "devops" {
   owners    = [data.azuread_client_config.current.object_id]
 }
 
-resource "azuread_application_password" "devops" {
-  application_id = azuread_application.devops.id
-  display_name   = "terraform-managed"
-}
-
 # OIDC federated credential so GitHub Actions assumes dmplt-devops without a secret.
 resource "azuread_application_federated_identity_credential" "devops_main" {
   application_id = azuread_application.devops.id

@@ -58,6 +58,7 @@ module "unity_catalog" {
   source               = "./modules/unity_catalog"
   location             = var.location
   workspace_id         = module.databricks_workspace.workspace_id
+  workspace_numeric_id = module.databricks_workspace.workspace_numeric_id
   access_connector_id  = module.databricks_workspace.access_connector_id
   storage_account_name = module.storage.storage_account_name
   container_names      = module.storage.container_names
