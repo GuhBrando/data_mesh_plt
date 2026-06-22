@@ -15,3 +15,12 @@ module "core" {
   location = var.location
   tags     = var.tags
 }
+
+module "backend_app" {
+  source                       = "./modules/backend_app"
+  resource_group_name          = module.core.resource_group_name
+  container_app_environment_id = module.core.container_app_environment_id
+  acr_login_server             = module.core.acr_login_server
+  acr_name                     = module.core.acr_name
+  tags                         = var.tags
+}
