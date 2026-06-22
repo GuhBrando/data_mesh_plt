@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+# ============================================================================
+# DEPRECATED (2026-06-22): Infrastructure is now managed by Terraform under
+# infra/terraform/ (see infra/terraform/README.md). This script is retained
+# only as a manual fallback until `terraform import` is verified against live
+# Azure (terraform plan showing zero destroy/replace). Remove it after that.
+# ============================================================================
+
 # Prerequisites:
 #   1. Azure CLI installed and logged in (az login)
 #   2. Export these variables before running:

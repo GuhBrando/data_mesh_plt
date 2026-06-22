@@ -1,7 +1,7 @@
 # Azure CD Pipeline — Design Spec
 
-**Date:** 2026-04-05  
-**Author:** GuhBrando  
+**Date:** 2026-04-05
+**Author:** GuhBrando
 **Status:** Approved
 
 ---
@@ -10,7 +10,7 @@
 
 Continuous Deployment pipeline for the Data Mesh Platform to Azure, triggered by version tags (`v*.*.*`). Uses GitHub Actions with Azure CLI. Infrastructure is created once manually via a setup script; the pipeline only handles build and deploy.
 
-**Phase:** Development / Staging  
+**Phase:** Development / Staging
 **Future migration:** PostgreSQL Container App → Azure Database for PostgreSQL Flexible Server (when moving to production)
 
 ---
@@ -154,4 +154,4 @@ GitHub Actions will:
 - Database migrations (Atlas) are not run in the CD pipeline — applied manually for now
 - No rollback mechanism in this phase
 - No staging vs. production environment split — single environment for dev/staging
-- No Bicep / IaC — infrastructure created manually via setup script
+- ~~No Bicep / IaC — infrastructure created manually via setup script~~ **Superseded 2026-06-22:** all infrastructure is now Terraform-managed under `infra/terraform/` (see `docs/superpowers/specs/2026-06-22-terraform-azure-databricks-design.md`). `scripts/azure-setup.sh` is **deprecated** and kept only as a manual fallback until the `terraform import` is verified against live Azure (zero destroy/replace on `terraform plan`); remove it after that verification.
