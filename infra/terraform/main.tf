@@ -24,3 +24,10 @@ module "backend_app" {
   acr_name                     = module.core.acr_name
   tags                         = var.tags
 }
+
+module "frontend" {
+  source              = "./modules/frontend"
+  resource_group_name = module.core.resource_group_name
+  location            = var.location
+  tags                = var.tags
+}
