@@ -53,3 +53,19 @@ resource "azurerm_role_assignment" "uc_storage" {
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = module.databricks_workspace.access_connector_principal_id
 }
+
+module "unity_catalog" {
+  source               = "./modules/unity_catalog"
+  location             = var.location
+  workspace_id         = module.databricks_workspace.workspace_id
+  access_connector_id  = module.databricks_workspace.access_connector_id
+  storage_account_name = module.storage.storage_account_name
+  container_names      = module.storage.container_names
+  catalog_owner        = module.identities.admin_client_id
+  devops_principal     = module.identities.devops_client_id
+
+  providers = {
+    databricks.account   = databricks.account
+    databricks.workspace = databricks.workspace
+  }
+}
