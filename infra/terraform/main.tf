@@ -31,3 +31,11 @@ module "frontend" {
   location            = var.location
   tags                = var.tags
 }
+
+module "storage" {
+  source              = "./modules/storage"
+  resource_group_name = module.core.resource_group_name
+  location            = var.location
+  tags                = var.tags
+  containers          = local.catalogs
+}
