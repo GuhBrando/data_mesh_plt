@@ -1,7 +1,7 @@
 variable "location" { type = string }
 variable "workspace_id" { type = string }
 variable "workspace_numeric_id" {
-  type        = string
+  type        = number
   description = "Numeric Databricks workspace id for metastore assignment."
 }
 variable "access_connector_id" { type = string }
