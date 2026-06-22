@@ -17,9 +17,8 @@ provider "databricks" {
 }
 
 # Workspace-level Databricks: storage credential, external locations, catalogs, grants.
-# wired in Task 8
-# provider "databricks" {
-#   alias                       = "workspace"
-#   host                        = module.databricks_workspace.workspace_url
-#   azure_workspace_resource_id = module.databricks_workspace.workspace_id
-# }
+provider "databricks" {
+  alias                       = "workspace"
+  host                        = module.databricks_workspace.workspace_url
+  azure_workspace_resource_id = module.databricks_workspace.workspace_id
+}

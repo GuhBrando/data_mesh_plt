@@ -39,3 +39,17 @@ module "storage" {
   tags                = var.tags
   containers          = local.catalogs
 }
+
+module "databricks_workspace" {
+  source              = "./modules/databricks_workspace"
+  resource_group_name = module.core.resource_group_name
+  location            = var.location
+  tags                = var.tags
+}
+
+# Access Connector managed identity → data plane access on dmpltsta.
+resource "azurerm_role_assignment" "uc_storage" {
+  scope                = module.storage.storage_account_id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = module.databricks_workspace.access_connector_principal_id
+}
