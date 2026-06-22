@@ -9,3 +9,9 @@ module "identities" {
   github_repo     = var.github_repo
   subscription_id = var.subscription_id
 }
+
+module "core" {
+  source   = "./modules/core"
+  location = var.location
+  tags     = var.tags
+}
