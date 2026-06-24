@@ -2,30 +2,77 @@
 
 All Azure infrastructure is managed here. Region: `westus2`.
 
-## One-time bootstrap
+## Layout
 
-1. **State backend** (creates `dmplttfstate` storage):
-   ```bash
-   cd bootstrap && terraform init && terraform apply -var="subscription_id=<SUB_ID>" && cd ..
-   ```
-2. **Databricks account admin**: in the Databricks Account Console
-   (https://accounts.azuredatabricks.net), add the `dmplt-admin` service
-   principal (its `client_id`, output by Task 3 apply) as an **account admin**.
-   Required so Terraform can create the Unity Catalog metastore.
-   (Chicken-and-egg: SP is created by `terraform apply`; grant admin after the
-   identities module applies, before applying the unity_catalog module — see
-   "Phased apply" below.)
-3. Get the **Databricks Account ID** from the Account Console → set
-   `databricks_account_id` in `terraform.tfvars`.
+The config is split into independent **stacks** (separate state files) so that no
+provider configuration ever depends on a value that is unknown at plan time. This
+removes the chicken-and-egg the old monolithic root suffered (the
+`databricks.workspace` provider was configured from a workspace created in the same
+apply, which broke `import` and any non-`-target` `plan`).
 
-## Configure
-
-```bash
-cp terraform.tfvars.example terraform.tfvars   # fill in real values (gitignored)
-terraform init    # uses remote azurerm backend
+```
+infra/terraform/
+  bootstrap/    one-time: creates the remote state storage (local state)
+  modules/      shared modules (core, backend_app, frontend, storage,
+                identities, databricks_workspace, unity_catalog)
+  platform/     Azure layer: identities, core, apps, storage, Databricks WORKSPACE
+                  state key: platform.tfstate · providers: azurerm, azuread
+  data_plane/   Databricks layer: metastore, catalogs, grants (Unity Catalog)
+                  state key: data_plane.tfstate · providers: databricks
+                  reads platform outputs via terraform_remote_state
 ```
 
-## Import existing resources (first run only)
+`data_plane` configures its `databricks.workspace` provider from the **platform**
+stack's remote state. Those values are committed to state, hence known at plan time
+— so each stack runs with a plain `terraform apply` (no `-target` gymnastics).
+
+> **Shell note.** All `terraform`, `az`, `cd` and `terraform output` commands are
+> identical on every OS. Only two things differ between shells: setting an
+> environment variable, and which import helper you call. Both variants are shown
+> below — PowerShell (Windows) and bash (Linux/macOS/Git Bash).
+
+## 0. One-time bootstrap (remote state backend)
+
+```bash
+cd bootstrap
+az login
+terraform init
+terraform apply -var="subscription_id=<SUB_ID>"   # creates dmplttfstate storage
+cd ..
+```
+
+## 1. Platform stack
+
+PowerShell:
+
+```powershell
+cd platform
+Copy-Item terraform.tfvars.example terraform.tfvars   # fill in real values (gitignored)
+terraform init
+```
+
+bash:
+
+```bash
+cd platform
+cp terraform.tfvars.example terraform.tfvars          # fill in real values (gitignored)
+terraform init
+```
+
+### Import pre-existing resources (first run only)
+
+If the resource group `dmplt-rg` and friends already exist (created previously by
+`scripts/azure-setup.sh`), import them so Terraform does not try to recreate them.
+
+PowerShell:
+
+```powershell
+$env:SUBSCRIPTION_ID = "<SUB_ID>"
+./import.ps1
+terraform plan    # MUST show zero destroy/replace on imported resources
+```
+
+bash:
 
 ```bash
 export SUBSCRIPTION_ID=<SUB_ID>
@@ -33,70 +80,114 @@ bash import.sh
 terraform plan    # MUST show zero destroy/replace on imported resources
 ```
 
-### Name verification
+Imported: `dmplt-rg`, `dmpltacr`, `dmplt-cae`, `dmplt-ca-backend`,
+`dmplt-stapp-frontend`. **New** (not imported, created by apply): the data storage
+account `dmpltsta`, the Databricks workspace, the access connector, and the storage
+role assignment.
 
-Before importing, confirm the live resource names match this config (`dmplt-rg`,
-`dmpltacr`, `dmplt-cae`, `dmplt-ca-backend`, `dmplt-stapp-frontend`). These names
-match `scripts/azure-setup.sh`; any mismatch means Terraform will create a new
-resource and potentially replace the existing one.
+> **Log Analytics note.** `dmplt-cae` may have been created with an auto-generated
+> Log Analytics workspace (names like `workspace-dmpltrg…`). This config declares an
+> explicit `dmplt-law`. Before `apply`, either import the existing LAW as
+> `module.core.azurerm_log_analytics_workspace.main`, or verify `terraform plan`
+> shows **no destroy/replace on `dmplt-cae`**.
 
-### Log Analytics note
+### Apply
 
-The existing `dmplt-cae` was created without an explicit Log Analytics workspace,
-so Azure may have auto-generated one with a different name. This config declares an
-explicit `dmplt-law`. Before the first apply, either:
-- (a) Import the existing auto-generated LAW as
-  `module.core.azurerm_log_analytics_workspace.main`, or
-- (b) Accept that `terraform plan` will want to create `dmplt-law` and re-point
-  the CAE — verify `terraform plan` shows **NO destroy/replace on `dmplt-cae`**.
-
-Resolve this during import verification.
-
-### New resources (not imported)
-
-The storage account `dmpltsta` and its containers are **new** resources — they are
-created by Terraform and intentionally NOT imported.
-
-## Phased apply (handles the UC account-admin bootstrap)
-
-The `databricks.workspace` provider is configured from the workspace module's
-outputs, so the workspace must exist before any Unity Catalog resource is planned.
-Run applies in this order:
+Creating Azure role assignments (`azurerm_role_assignment.uc_storage`, devops
+Contributor) requires **Owner** or **User Access Administrator** — plain
+`Contributor` cannot. Run with a privileged identity or grant the CI principal
+`User Access Administrator`.
 
 ```bash
-# 1) Identities first; then grant dmplt-admin account admin in the Databricks Account Console.
-terraform apply -target=module.identities
-# 2) Create the Databricks workspace + access connector + storage role assignment
-#    (the databricks.workspace provider is configured from these outputs).
-terraform apply -target=module.databricks_workspace -target=azurerm_role_assignment.uc_storage
-# 3) Full apply (metastore, catalogs, grants, and the rest).
 terraform apply
 ```
 
-Steady state (after bootstrap): `terraform plan` / `terraform apply`.
+## 2. Grant the admin SP account-admin (one-time)
 
-### Permissions note
+The `dmplt-admin` service principal must be a Databricks **account admin** so the
+data_plane stack can create the Unity Catalog metastore. This grant must be done
+once by an existing account admin (an Azure AD Global Administrator is one).
 
-Creating Azure role assignments (`azurerm_role_assignment.uc_storage` and the
-devops Contributor assignment) requires `Owner` or `User Access Administrator` —
-plain `Contributor` cannot create role assignments. Either run the
-role-assignment-creating applies (steps 1 and 2) with a privileged human identity,
-or grant the CI principal `User Access Administrator`.
+> Terraform cannot do this grant — the provider's `access_control_rule_set` has no
+> `account_admin` role. Use the SCIM API instead (the script below) or the console.
 
-The devops Contributor assignment is subscription-scoped for bootstrap convenience
-and SHOULD be tightened to the relevant resource group(s) for least privilege once
-the infrastructure is stable.
+**Automated (recommended, idempotent):** first apply the `databricks_bootstrap`
+stack to register the SP, then run the grant script:
 
-## Costs
+```bash
+cd databricks_bootstrap
+terraform init && terraform apply          # registers dmplt-admin in the account
+ACCOUNT_ID=<databricks-account-id> bash grant-account-admin.sh
+```
 
-Only fixed cost is ACR Basic (~$5/mo). Databricks Premium has no idle cost
-(DBU pay-per-use); no clusters/SQL warehouses are provisioned here. Storage is
-Standard LRS; Container App scales to zero; Static Web App is Free.
+The script (`grant-account-admin.sh`) gets an Azure CLI token, finds the SP and adds
+the `account_admin` role via the Databricks CLI — additively (it never manages a
+list of admins) and idempotently. Requires `az` (logged in as Global Admin), the
+[Databricks CLI](https://docs.databricks.com/dev-tools/cli/install.html) and `jq`.
+
+**Manual alternative:** in the Account Console (https://accounts.azuredatabricks.net)
+→ User management → Service principals → `dmplt-admin` → toggle **Account admin**.
+
+The **Databricks Account ID** comes from the same console → it goes into
+`data_plane/terraform.tfvars`.
+
+## 3. Data plane stack (Unity Catalog)
+
+PowerShell:
+
+```powershell
+cd ../data_plane
+Copy-Item terraform.tfvars.example terraform.tfvars   # set databricks_account_id
+terraform init
+terraform apply
+```
+
+bash:
+
+```bash
+cd ../data_plane
+cp terraform.tfvars.example terraform.tfvars          # set databricks_account_id
+terraform init
+terraform apply
+```
+
+`terraform_remote_state` pulls the workspace URL/id, storage, connector and SP ids
+from the platform stack automatically — no manual wiring.
+
+## 4. Grant read access to all users (optional)
+
+The catalogs are owned by the `dmplt-admin` service principal, so by default human
+users do not see them (Unity Catalog only shows catalogs you have a privilege on).
+To give **every account user** read access (`USE_CATALOG` + `USE_SCHEMA` + `SELECT`,
+inherited by all schemas/tables) on every catalog, run the routine from
+`data_plane/`:
+
+```bash
+cd data_plane
+bash grant-read-all-users.sh
+```
+
+It authenticates as `dmplt-admin` (the catalog owner, using its credentials from the
+platform stack), discovers the catalogs from `terraform output`, and grants read to
+the built-in `account users` group. Additive and idempotent — re-running is safe and
+never removes other grants. Requires `az` (logged in), the Databricks CLI and `jq`.
+
+## Steady state
+
+After bootstrap + the one-time grant: `terraform apply` in `platform/`, then in
+`data_plane/`. The grant and import steps are never repeated.
 
 ## Outputs
 
-- `admin_client_id` / `admin_client_secret` (sensitive)
-- `devops_client_id` (devops authenticates via OIDC — no client secret output)
-- `databricks_workspace_url`, `catalog_names`
+- platform: `admin_client_id`, `devops_client_id`, `workspace_url`,
+  `admin_client_secret` (sensitive), plus the wiring outputs the data_plane reads.
+- data_plane: `catalog_names`, `metastore_id`.
 
-Retrieve sensitive outputs: `terraform output -raw admin_client_secret`.
+Retrieve sensitive outputs: `terraform output -raw admin_client_secret` (in
+`platform/`).
+
+## Costs
+
+Only fixed cost is ACR Basic (~$5/mo). Databricks Premium has no idle cost (DBU
+pay-per-use); no clusters/SQL warehouses are provisioned here. Storage is Standard
+LRS; Container App scales to zero; Static Web App is Free.

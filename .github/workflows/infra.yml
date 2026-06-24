@@ -18,14 +18,15 @@ permissions:
 
 env:
   TF_VERSION: "1.9.5"
-  WORKDIR: infra/terraform
+  # CI covers the platform stack only. The data_plane stack requires a one-time
+  # manual Databricks account-admin grant, so it is applied manually (see README).
+  WORKDIR: infra/terraform/platform
   ARM_USE_OIDC: "true"
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-  TF_VAR_databricks_account_id: ${{ secrets.DATABRICKS_ACCOUNT_ID }}
 
 jobs:
   plan:

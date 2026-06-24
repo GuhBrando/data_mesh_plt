@@ -3,6 +3,6 @@ terraform {
     resource_group_name  = "dmplt-tfstate-rg"
     storage_account_name = "dmplttfstate"
     container_name       = "tfstate"
-    key                  = "data_mesh_plt.tfstate"
+    key                  = "databricks_bootstrap.tfstate"
   }
 }

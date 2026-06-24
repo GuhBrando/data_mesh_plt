@@ -14,12 +14,6 @@ variable "location" {
   description = "Azure region for all resources."
 }
 
-variable "databricks_account_id" {
-  type        = string
-  sensitive   = true
-  description = "Databricks Account ID (from the Account Console)."
-}
-
 variable "github_repo" {
   type        = string
   default     = "GuhBrando/data_mesh_plt"

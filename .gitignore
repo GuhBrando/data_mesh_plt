@@ -218,3 +218,14 @@ frontend/.stryker-tmp/
 
 frontend/coverage/
 .mutmut-cache
+node_modules/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+*.auto.tfvars
+terraform.tfvars
+.terraform.lock.hcl
