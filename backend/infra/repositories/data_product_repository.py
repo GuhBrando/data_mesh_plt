@@ -3,6 +3,20 @@ import uuid
 from backend.domain.entities.data_product import DataProduct
 from backend.domain.interfaces.data_product_repository import IDataProductRepository
 
+_COLUMNS = "id, name, description, data_contracts_id, repo_url, created_at, updated_at"
+
+
+def _row_to_entity(row) -> DataProduct:
+    return DataProduct(
+        id=row["id"],
+        name=row["name"],
+        description=row["description"],
+        data_contracts_id=row["data_contracts_id"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        repo_url=row["repo_url"],
+    )
+
 
 class PostgresDataProductRepository(IDataProductRepository):
     def __init__(self, db):
@@ -13,62 +27,30 @@ class PostgresDataProductRepository(IDataProductRepository):
     ) -> DataProduct:
         async with self.db.transaction():
             row = await self.db.fetchrow(
-                """
+                f"""
                 INSERT INTO catalog.data_products (name, description, data_contracts_id)
                 VALUES ($1, $2, $3)
-                RETURNING id, name, description,
-                data_contracts_id, created_at, updated_at;
+                RETURNING {_COLUMNS};
                 """,
                 name,
                 description,
                 data_contracts_id,
             )
-            return DataProduct(
-                id=row["id"],
-                name=row["name"],
-                description=row["description"],
-                data_contracts_id=row["data_contracts_id"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-            )
+            return _row_to_entity(row)
 
     async def get_by_id(self, product_id: uuid.UUID) -> DataProduct | None:
         row = await self.db.fetchrow(
-            """
-            SELECT id, name, description, data_contracts_id, created_at, updated_at
+            f"""
+            SELECT {_COLUMNS}
             FROM catalog.data_products WHERE id = $1;
             """,
             product_id,
         )
-        if row:
-            return DataProduct(
-                id=row["id"],
-                name=row["name"],
-                description=row["description"],
-                data_contracts_id=row["data_contracts_id"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-            )
-        return None
+        return _row_to_entity(row) if row else None
 
     async def list(self) -> list[DataProduct]:
-        rows = await self.db.fetch(
-            """
-            SELECT id, name, description, data_contracts_id, created_at, updated_at
-            FROM catalog.data_products;
-            """
-        )
-        return [
-            DataProduct(
-                id=r["id"],
-                name=r["name"],
-                description=r["description"],
-                data_contracts_id=r["data_contracts_id"],
-                created_at=r["created_at"],
-                updated_at=r["updated_at"],
-            )
-            for r in rows
-        ]
+        rows = await self.db.fetch(f"SELECT {_COLUMNS} FROM catalog.data_products;")
+        return [_row_to_entity(r) for r in rows]
 
     async def update(
         self,
@@ -97,21 +79,11 @@ class PostgresDataProductRepository(IDataProductRepository):
                 UPDATE catalog.data_products
                 SET {set_clauses}, updated_at = now()
                 WHERE id = ${len(values)}
-                RETURNING id, name, description,
-                data_contracts_id, created_at, updated_at;
+                RETURNING {_COLUMNS};
                 """,
                 *values,
             )
-            if row:
-                return DataProduct(
-                    id=row["id"],
-                    name=row["name"],
-                    description=row["description"],
-                    data_contracts_id=row["data_contracts_id"],
-                    created_at=row["created_at"],
-                    updated_at=row["updated_at"],
-                )
-            return None
+            return _row_to_entity(row) if row else None
 
     async def delete(self, product_id: uuid.UUID) -> bool:
         async with self.db.transaction():
@@ -120,3 +92,13 @@ class PostgresDataProductRepository(IDataProductRepository):
                 product_id,
             )
             return result == "DELETE 1"
+
+    async def update_repo_url(self, product_id: uuid.UUID, repo_url: str) -> None:
+        async with self.db.transaction():
+            result = await self.db.execute(
+                "UPDATE catalog.data_products SET repo_url = $1 WHERE id = $2;",
+                repo_url,
+                product_id,
+            )
+            if result != "UPDATE 1":
+                raise ValueError(f"No data product with id {product_id}")

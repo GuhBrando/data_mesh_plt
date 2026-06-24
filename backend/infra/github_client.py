@@ -16,6 +16,8 @@ def _slugify(text: str) -> str:
 class GitHubClient:
     def __init__(self, token: str, repo: str):
         self._repo = repo
+        self._owner = repo.split("/", 1)[0]
+        self._owner_type: str | None = None
         self._headers = {
             "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
@@ -92,3 +94,76 @@ class GitHubClient:
                     content = base64.b64decode(raw.replace("\n", "")).decode()
                     results.append((item["path"], content))
             return results
+
+    async def _get_owner_type(self, client: httpx.AsyncClient) -> str:
+        if self._owner_type is not None:
+            return self._owner_type
+        r = await client.get(
+            f"{_API}/users/{self._owner}",
+            headers=self._headers,
+        )
+        self._raise_for_status(r)
+        self._owner_type = r.json().get("type", "User")
+        return self._owner_type
+
+    async def create_product_repo(self, name: str, description: str) -> dict:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            owner_type = await self._get_owner_type(client)
+            url = (
+                f"{_API}/orgs/{self._owner}/repos"
+                if owner_type == "Organization"
+                else f"{_API}/user/repos"
+            )
+            payload = {
+                "name": name,
+                "description": description,
+                "private": True,
+                "auto_init": False,
+            }
+            r = await client.post(url, headers=self._headers, json=payload)
+            if r.status_code == 422 and "already exists" in r.text:
+                existing = await client.get(
+                    f"{_API}/repos/{self._owner}/{name}",
+                    headers=self._headers,
+                )
+                self._raise_for_status(existing)
+                data = existing.json()
+                return {
+                    "html_url": data["html_url"],
+                    "full_name": data["full_name"],
+                }
+            self._raise_for_status(r)
+            data = r.json()
+            return {
+                "html_url": data["html_url"],
+                "full_name": data["full_name"],
+            }
+
+    async def push_scaffold(self, repo_full_name: str, files: dict[str, str]) -> None:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            for path, content in files.items():
+                sha_r = await client.get(
+                    f"{_API}/repos/{repo_full_name}/contents/{path}",
+                    headers=self._headers,
+                )
+                payload: dict = {
+                    "message": f"Scaffold {path}",
+                    "content": base64.b64encode(content.encode()).decode(),
+                }
+                if sha_r.status_code == 200:
+                    payload["sha"] = sha_r.json().get("sha")
+                r = await client.put(
+                    f"{_API}/repos/{repo_full_name}/contents/{path}",
+                    headers=self._headers,
+                    json=payload,
+                )
+                self._raise_for_status(r)
+
+    async def archive_repo(self, repo_full_name: str) -> None:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.patch(
+                f"{_API}/repos/{repo_full_name}",
+                headers=self._headers,
+                json={"archived": True},
+            )
+            self._raise_for_status(r)

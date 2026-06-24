@@ -11,6 +11,7 @@ class DataProduct:
         data_contracts_id: uuid.UUID,
         created_at: datetime,
         updated_at: datetime,
+        repo_url: str | None = None,
     ):
         self.id = id
         self.name = name
@@ -18,3 +19,4 @@ class DataProduct:
         self.data_contracts_id = data_contracts_id
         self.created_at = created_at
         self.updated_at = updated_at
+        self.repo_url = repo_url

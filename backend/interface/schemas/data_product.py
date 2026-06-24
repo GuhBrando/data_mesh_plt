@@ -15,6 +15,7 @@ class DataProductResponseModel(BaseModel):
     name: str
     description: str
     data_contracts_id: uuid.UUID
+    repo_url: str | None = None
     created_at: datetime
     updated_at: datetime
 
