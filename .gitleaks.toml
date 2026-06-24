@@ -1,0 +1,10 @@
+# Gitleaks configuration.
+# Extends the built-in default ruleset, then allowlists known false positives.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Atlas migration checksum file holds h1:... hashes (high entropy, not secrets)"
+paths = [
+    '''database/migrations/atlas\.sum''',
+]

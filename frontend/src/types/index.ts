@@ -55,6 +55,7 @@ export interface DataProduct {
   name: string
   description: string
   data_contracts_id: string
+  repo_url?: string | null   // provisioned GitHub repo URL; null until backend provisions it
   created_at: string
   updated_at: string
 }
