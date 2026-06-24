@@ -218,3 +218,6 @@ frontend/.stryker-tmp/
 
 frontend/coverage/
 .mutmut-cache
+
+# Node
+node_modules/
