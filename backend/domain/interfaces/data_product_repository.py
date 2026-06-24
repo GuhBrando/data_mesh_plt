@@ -27,3 +27,6 @@ class IDataProductRepository(ABC):
 
     @abstractmethod
     async def delete(self, product_id: uuid.UUID) -> bool: ...
+
+    @abstractmethod
+    async def update_repo_url(self, product_id: uuid.UUID, repo_url: str) -> None: ...

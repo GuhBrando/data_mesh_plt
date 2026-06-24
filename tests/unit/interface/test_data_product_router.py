@@ -12,8 +12,11 @@ from backend.domain.value_objects.user_role import UserRole
 from backend.infra.postgres import get_db_connection
 from backend.interface.dependencies import (
     get_create_data_product_use_case,
+    get_data_contract_repository,
+    get_data_product_repository,
     get_delete_data_product_use_case,
     get_get_data_product_use_case,
+    get_github_client,
     get_list_data_products_use_case,
     get_update_data_product_use_case,
 )
@@ -46,6 +49,11 @@ def _admin() -> User:
     )
 
 
+class _StubContract:
+    def __init__(self, domain: str = "Marketing"):
+        self.domain = domain
+
+
 @pytest.fixture
 def admin_client():
     mock_db = AsyncMock()
@@ -59,6 +67,7 @@ def test_create_data_product(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = _product(name="Invoices Product")
     app.dependency_overrides[get_create_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.post(
         "/api/v1/data-products",
         json={
@@ -93,6 +102,7 @@ def test_get_data_product_found(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = _product()
     app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.get(f"/api/v1/data-products/{PRODUCT_ID}")
     assert resp.status_code == 200
     assert resp.json()["name"] == "Orders Product"
@@ -102,6 +112,7 @@ def test_get_data_product_not_found(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = None
     app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.get(f"/api/v1/data-products/{uuid.uuid4()}")
     assert resp.status_code == 404
 
@@ -110,6 +121,7 @@ def test_update_data_product(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = _product(name="Updated")
     app.dependency_overrides[get_update_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.put(
         f"/api/v1/data-products/{PRODUCT_ID}", json={"name": "Updated"}
     )
@@ -121,6 +133,7 @@ def test_update_data_product_not_found(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = None
     app.dependency_overrides[get_update_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.put(
         f"/api/v1/data-products/{uuid.uuid4()}", json={"name": "X"}
     )
@@ -131,6 +144,10 @@ def test_delete_data_product(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = True
     app.dependency_overrides[get_delete_data_product_use_case] = lambda: mock_uc
+    mock_get = AsyncMock()
+    mock_get.execute.return_value = _product()
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_get
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.delete(f"/api/v1/data-products/{PRODUCT_ID}")
     assert resp.status_code == 204
 
@@ -139,5 +156,207 @@ def test_delete_data_product_not_found(admin_client):
     mock_uc = AsyncMock()
     mock_uc.execute.return_value = False
     app.dependency_overrides[get_delete_data_product_use_case] = lambda: mock_uc
+    mock_get = AsyncMock()
+    mock_get.execute.return_value = None
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_get
+    app.dependency_overrides[get_github_client] = lambda: None
     resp = admin_client.delete(f"/api/v1/data-products/{uuid.uuid4()}")
     assert resp.status_code == 404
+
+
+def test_get_data_product_includes_repo_url(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product()
+    mock_uc.execute.return_value.repo_url = "https://github.com/acme/dp-x"
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
+    resp = admin_client.get(f"/api/v1/data-products/{PRODUCT_ID}")
+    assert resp.status_code == 200
+    assert resp.json()["repo_url"] == "https://github.com/acme/dp-x"
+
+
+def test_create_data_product_triggers_repo_provisioning(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product(name="Attribution Model")
+    mock_github = AsyncMock()
+    mock_github.create_product_repo.return_value = {
+        "html_url": "https://github.com/acme/dp-marketing-attribution-model",
+        "full_name": "acme/dp-marketing-attribution-model",
+    }
+    mock_github.push_scaffold = AsyncMock()
+    mock_contract_repo = AsyncMock()
+    mock_contract_repo.get_by_id.return_value = _StubContract("Marketing")
+    mock_product_repo = AsyncMock()
+
+    app.dependency_overrides[get_create_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    app.dependency_overrides[get_data_contract_repository] = lambda: mock_contract_repo
+    app.dependency_overrides[get_data_product_repository] = lambda: mock_product_repo
+
+    resp = admin_client.post(
+        "/api/v1/data-products",
+        json={
+            "name": "Attribution Model",
+            "description": "desc",
+            "data_contracts_id": str(CONTRACT_ID),
+        },
+    )
+    assert resp.status_code == 201
+    mock_github.create_product_repo.assert_awaited_once()
+    args, kwargs = mock_github.create_product_repo.await_args
+    assert args[0] == "dp-marketing-attribution-model"
+    mock_github.push_scaffold.assert_awaited_once()
+    mock_product_repo.update_repo_url.assert_awaited_once()
+    assert (
+        resp.json()["repo_url"]
+        == "https://github.com/acme/dp-marketing-attribution-model"
+    )
+
+
+def test_create_data_product_warns_when_github_unavailable(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product()
+    app.dependency_overrides[get_create_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: None
+    app.dependency_overrides[get_data_contract_repository] = lambda: AsyncMock()
+    app.dependency_overrides[get_data_product_repository] = lambda: AsyncMock()
+    resp = admin_client.post(
+        "/api/v1/data-products",
+        json={
+            "name": "X",
+            "description": "y",
+            "data_contracts_id": str(CONTRACT_ID),
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["repo_url"] is None
+
+
+def test_create_data_product_swallows_github_errors(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product()
+    mock_github = AsyncMock()
+    mock_github.create_product_repo.side_effect = RuntimeError("boom")
+    mock_contract_repo = AsyncMock()
+    mock_contract_repo.get_by_id.return_value = _StubContract("Marketing")
+    mock_product_repo = AsyncMock()
+    app.dependency_overrides[get_create_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    app.dependency_overrides[get_data_contract_repository] = lambda: mock_contract_repo
+    app.dependency_overrides[get_data_product_repository] = lambda: mock_product_repo
+    resp = admin_client.post(
+        "/api/v1/data-products",
+        json={"name": "X", "description": "y", "data_contracts_id": str(CONTRACT_ID)},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["repo_url"] is None
+    mock_product_repo.update_repo_url.assert_not_awaited()
+
+
+def test_get_data_product_backfills_repo_when_missing(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product()
+    mock_github = AsyncMock()
+    mock_github.create_product_repo.return_value = {
+        "html_url": "https://github.com/acme/dp-marketing-orders-product",
+        "full_name": "acme/dp-marketing-orders-product",
+    }
+    mock_github.push_scaffold = AsyncMock()
+    mock_contract_repo = AsyncMock()
+    mock_contract_repo.get_by_id.return_value = _StubContract("Marketing")
+    mock_product_repo = AsyncMock()
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    app.dependency_overrides[get_data_contract_repository] = lambda: mock_contract_repo
+    app.dependency_overrides[get_data_product_repository] = lambda: mock_product_repo
+    resp = admin_client.get(f"/api/v1/data-products/{PRODUCT_ID}")
+    assert resp.status_code == 200
+    mock_github.create_product_repo.assert_awaited_once()
+    assert (
+        resp.json()["repo_url"]
+        == "https://github.com/acme/dp-marketing-orders-product"
+    )
+
+
+def test_get_data_product_skips_backfill_when_repo_url_set(admin_client):
+    p = _product()
+    p.repo_url = "https://github.com/acme/dp-existing"
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = p
+    mock_github = AsyncMock()
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    app.dependency_overrides[get_data_contract_repository] = lambda: AsyncMock()
+    app.dependency_overrides[get_data_product_repository] = lambda: AsyncMock()
+    resp = admin_client.get(f"/api/v1/data-products/{PRODUCT_ID}")
+    assert resp.status_code == 200
+    mock_github.create_product_repo.assert_not_awaited()
+
+
+def test_list_data_products_does_not_backfill(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = [_product(), _product(id=uuid.uuid4(), name="B")]
+    mock_github = AsyncMock()
+    app.dependency_overrides[get_list_data_products_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    resp = admin_client.get("/api/v1/data-products")
+    assert resp.status_code == 200
+    mock_github.create_product_repo.assert_not_awaited()
+
+
+def test_update_data_product_backfills_repo_when_missing(admin_client):
+    mock_uc = AsyncMock()
+    mock_uc.execute.return_value = _product(name="Updated")
+    mock_github = AsyncMock()
+    mock_github.create_product_repo.return_value = {
+        "html_url": "https://github.com/acme/dp-marketing-updated",
+        "full_name": "acme/dp-marketing-updated",
+    }
+    mock_github.push_scaffold = AsyncMock()
+    mock_contract_repo = AsyncMock()
+    mock_contract_repo.get_by_id.return_value = _StubContract("Marketing")
+    mock_product_repo = AsyncMock()
+    app.dependency_overrides[get_update_data_product_use_case] = lambda: mock_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    app.dependency_overrides[get_data_contract_repository] = lambda: mock_contract_repo
+    app.dependency_overrides[get_data_product_repository] = lambda: mock_product_repo
+    resp = admin_client.put(
+        f"/api/v1/data-products/{PRODUCT_ID}", json={"name": "Updated"}
+    )
+    assert resp.status_code == 200
+    mock_github.create_product_repo.assert_awaited_once()
+    assert (
+        resp.json()["repo_url"] == "https://github.com/acme/dp-marketing-updated"
+    )
+
+
+def test_delete_data_product_archives_repo(admin_client):
+    p = _product()
+    p.repo_url = "https://github.com/acme/dp-marketing-orders-product"
+    mock_get_uc = AsyncMock()
+    mock_get_uc.execute.return_value = p
+    mock_delete_uc = AsyncMock()
+    mock_delete_uc.execute.return_value = True
+    mock_github = AsyncMock()
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_get_uc
+    app.dependency_overrides[get_delete_data_product_use_case] = lambda: mock_delete_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    resp = admin_client.delete(f"/api/v1/data-products/{PRODUCT_ID}")
+    assert resp.status_code == 204
+    mock_github.archive_repo.assert_awaited_once_with(
+        "acme/dp-marketing-orders-product"
+    )
+
+
+def test_delete_data_product_without_repo_url_does_not_archive(admin_client):
+    mock_get_uc = AsyncMock()
+    mock_get_uc.execute.return_value = _product()  # repo_url=None
+    mock_delete_uc = AsyncMock()
+    mock_delete_uc.execute.return_value = True
+    mock_github = AsyncMock()
+    app.dependency_overrides[get_get_data_product_use_case] = lambda: mock_get_uc
+    app.dependency_overrides[get_delete_data_product_use_case] = lambda: mock_delete_uc
+    app.dependency_overrides[get_github_client] = lambda: mock_github
+    resp = admin_client.delete(f"/api/v1/data-products/{PRODUCT_ID}")
+    assert resp.status_code == 204
+    mock_github.archive_repo.assert_not_awaited()

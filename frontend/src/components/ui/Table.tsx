@@ -5,6 +5,7 @@ export interface Column<T> {
   header: string
   render: (row: T) => ReactNode
   className?: string
+  mobileHidden?: boolean
 }
 
 interface MobileCardConfig {
@@ -95,10 +96,11 @@ export default function Table<T>({
     (c) =>
       c.key !== mobileCardConfig.titleKey &&
       c.key !== mobileCardConfig.badgeKey &&
-      c.header !== '',
+      c.header !== '' &&
+      !c.mobileHidden,
   )
   const actionColumns = columns.filter(
-    (c) => c.header === '' && c.key !== mobileCardConfig.badgeKey,
+    (c) => c.header === '' && c.key !== mobileCardConfig.badgeKey && !c.mobileHidden,
   )
 
   const cardListNode = (
