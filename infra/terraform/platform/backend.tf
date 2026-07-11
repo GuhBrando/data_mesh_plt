@@ -6,6 +6,6 @@ terraform {
     key                  = "platform.tfstate"
     # Access state via Azure AD (Storage Blob Data Contributor) instead of
     # account keys, so the CI service principal doesn't need listKeys rights.
-    use_azuread_auth     = true
+    use_azuread_auth = true
   }
 }
