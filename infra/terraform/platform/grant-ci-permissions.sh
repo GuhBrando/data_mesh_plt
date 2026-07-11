@@ -24,7 +24,7 @@
 # grant is checked before it is made. If the platform stack has not been applied yet
 # (dmplt-devops missing), only grant 1 is made — re-run after `terraform apply`.
 #
-# Prereqs: az CLI (logged in), jq; gh CLI (logged in) for step 5. Run in Git Bash on
+# Prereqs: az CLI (logged in); gh CLI (logged in) for step 5. Run in Git Bash on
 # Windows.
 #
 # Usage:
@@ -37,9 +37,7 @@ set -euo pipefail
 # like /subscriptions/... must reach az verbatim.
 export MSYS_NO_PATHCONV=1
 
-for bin in az jq; do
-  command -v "$bin" >/dev/null 2>&1 || { echo "ERROR: '$bin' not found in PATH." >&2; exit 1; }
-done
+command -v az >/dev/null 2>&1 || { echo "ERROR: 'az' not found in PATH." >&2; exit 1; }
 
 BLOB_ROLE="Storage Blob Data Contributor"
 GRAPH_APP_ID="00000003-0000-0000-c000-000000000000" # Microsoft Graph (fixed, global)
@@ -91,7 +89,7 @@ GRAPH_SP_ID="$(az ad sp show --id "$GRAPH_APP_ID" --query id -o tsv)"
 ROLE_ID="$(az ad sp show --id "$GRAPH_APP_ID" --query "appRoles[?value=='$GRAPH_ROLE'].id | [0]" -o tsv)"
 ASSIGNED="$(az rest --method GET \
   --uri "https://graph.microsoft.com/v1.0/servicePrincipals/$DEVOPS_SP_ID/appRoleAssignments" \
-  | jq -r --arg r "$ROLE_ID" '.value[] | select(.appRoleId==$r) | .id')"
+  --query "value[?appRoleId=='$ROLE_ID'].id | [0]" -o tsv)"
 if [[ -n "$ASSIGNED" ]]; then
   echo "==> dmplt-devops already has $GRAPH_ROLE. Nothing to do."
 else
@@ -106,7 +104,7 @@ fi
 ensure_owner() {
   local existing
   existing="$(az rest --method GET --uri "https://graph.microsoft.com/v1.0/$1/$2/owners" \
-    | jq -r --arg id "$DEVOPS_SP_ID" '.value[] | select(.id==$id) | .id')"
+    --query "value[?id=='$DEVOPS_SP_ID'].id | [0]" -o tsv)"
   if [[ -n "$existing" ]]; then
     echo "==> dmplt-devops already owns $3. Nothing to do."
   else
