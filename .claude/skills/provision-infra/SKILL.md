@@ -98,10 +98,14 @@ New resources (not imported): `dmpltsta`, the Databricks workspace, the access
 connector, the UC storage role assignment.
 
 **After apply — enable CI (one-time).** GitHub Actions (`infra.yml`) runs the platform
-stack as the `dmplt-devops` SP via OIDC (no secret). Its standing permissions —
-tfstate blob access, the Graph `Application.ReadWrite.OwnedBy` role, and ownership of
-the dmplt-admin/dmplt-devops apps (self-ownership is inexpressible in HCL) — come from
-the same script. **Re-run it in Git Bash** now that `dmplt-devops` exists:
+stack as the `dmplt-devops` SP via OIDC (no secret). Everything CI needs comes from
+the same script: tfstate blob access, the Graph `Application.ReadWrite.OwnedBy` role,
+ownership of the dmplt-admin/dmplt-devops apps (self-ownership is inexpressible in
+HCL), and the repository variables the workflow reads (`AZURE_CLIENT_ID` /
+`AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID`, set via `gh`). Locally nothing is
+hardcoded: the script autodetects ids from the `az` session (override with
+`AZURE_SUBSCRIPTION_ID=... AZURE_TENANT_ID=...`). **Re-run it in Git Bash** now that
+`dmplt-devops` exists:
 ```bash
 bash grant-ci-permissions.sh
 ```

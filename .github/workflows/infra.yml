@@ -23,15 +23,15 @@ env:
   # manual Databricks account-admin grant, so it is applied manually (see README).
   WORKDIR: infra/terraform/platform
   # Authenticates as the dmplt-devops SP via OIDC — no secret. The federated
-  # credentials (pull_request + main) live in the identities module; its standing
-  # permissions come from infra/terraform/platform/grant-ci-permissions.sh.
-  # These are identifiers, not secrets.
-  ARM_CLIENT_ID: d49bff07-6720-4b5e-b962-c16c8e327f43
-  ARM_TENANT_ID: 02589359-ab33-4ac8-a14d-396cc39943ae
-  ARM_SUBSCRIPTION_ID: ff0bf8b0-bff5-4b7e-a36e-d853ac35ec1a
+  # credentials (pull_request + main) live in the identities module. The repository
+  # variables below AND the SP's standing permissions are both provisioned by
+  # infra/terraform/platform/grant-ci-permissions.sh.
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
   ARM_USE_OIDC: "true"
-  TF_VAR_subscription_id: ff0bf8b0-bff5-4b7e-a36e-d853ac35ec1a
-  TF_VAR_tenant_id: 02589359-ab33-4ac8-a14d-396cc39943ae
+  TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
 
 jobs:
   plan:

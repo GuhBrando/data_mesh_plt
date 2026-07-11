@@ -17,15 +17,19 @@
 #   2. dmplt-devops SP -> Storage Blob Data Contributor on dmplttfstate
 #   3. dmplt-devops SP -> Graph app role Application.ReadWrite.OwnedBy (admin consent)
 #   4. dmplt-devops SP -> owner of the dmplt-admin and dmplt-devops apps and SPs
+#   5. GitHub repository variables AZURE_CLIENT_ID / AZURE_TENANT_ID /
+#      AZURE_SUBSCRIPTION_ID (consumed by .github/workflows/infra.yml)
 #
 # Run ONCE by an Owner + Global Administrator identity (az login). Idempotent: every
 # grant is checked before it is made. If the platform stack has not been applied yet
 # (dmplt-devops missing), only grant 1 is made — re-run after `terraform apply`.
 #
-# Prereqs: az CLI (logged in), jq. Run in Git Bash on Windows.
+# Prereqs: az CLI (logged in), jq; gh CLI (logged in) for step 5. Run in Git Bash on
+# Windows.
 #
 # Usage:
 #   bash grant-ci-permissions.sh
+#   AZURE_SUBSCRIPTION_ID=<id> AZURE_TENANT_ID=<id> bash grant-ci-permissions.sh  # override az session
 
 set -euo pipefail
 
@@ -41,8 +45,9 @@ BLOB_ROLE="Storage Blob Data Contributor"
 GRAPH_APP_ID="00000003-0000-0000-c000-000000000000" # Microsoft Graph (fixed, global)
 GRAPH_ROLE="Application.ReadWrite.OwnedBy"
 
-# --- resolve inputs ----------------------------------------------------------------
-SUB_ID="$(az account show --query id -o tsv)"
+# --- resolve inputs (local env overrides; otherwise read from the az session) -------
+SUB_ID="${AZURE_SUBSCRIPTION_ID:-$(az account show --query id -o tsv)}"
+TENANT_ID="${AZURE_TENANT_ID:-$(az account show --query tenantId -o tsv)}"
 TFSTATE_SCOPE="/subscriptions/$SUB_ID/resourceGroups/dmplt-tfstate-rg/providers/Microsoft.Storage/storageAccounts/dmplttfstate"
 USER_OBJ_ID="$(az ad signed-in-user show --query id -o tsv)"
 echo "==> Subscription $SUB_ID, signed-in user $USER_OBJ_ID"
@@ -115,5 +120,19 @@ ensure_owner applications      "$ADMIN_APP_OBJ_ID"  "the dmplt-admin application
 ensure_owner applications      "$DEVOPS_APP_OBJ_ID" "its own application"
 ensure_owner servicePrincipals "$ADMIN_SP_ID"       "the dmplt-admin service principal"
 ensure_owner servicePrincipals "$DEVOPS_SP_ID"      "its own service principal"
+
+# --- 5. GitHub repository variables (identifiers, not secrets) ----------------------
+DEVOPS_CLIENT_ID="$(az ad sp show --id "$DEVOPS_SP_ID" --query appId -o tsv)"
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  echo "==> Setting GitHub repository variables (AZURE_CLIENT_ID / _TENANT_ID / _SUBSCRIPTION_ID) ..."
+  gh variable set AZURE_CLIENT_ID --body "$DEVOPS_CLIENT_ID"
+  gh variable set AZURE_TENANT_ID --body "$TENANT_ID"
+  gh variable set AZURE_SUBSCRIPTION_ID --body "$SUB_ID"
+else
+  echo "WARNING: gh CLI missing or not authenticated — set the repository variables by hand:" >&2
+  echo "  gh variable set AZURE_CLIENT_ID       --body $DEVOPS_CLIENT_ID" >&2
+  echo "  gh variable set AZURE_TENANT_ID       --body $TENANT_ID" >&2
+  echo "  gh variable set AZURE_SUBSCRIPTION_ID --body $SUB_ID" >&2
+fi
 
 echo "==> OK: CI (dmplt-devops) can now run the platform stack via OIDC."
