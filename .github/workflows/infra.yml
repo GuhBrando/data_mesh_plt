@@ -14,19 +14,24 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  # Required by OIDC: lets the job request the GitHub token Azure trusts.
+  id-token: write
 
 env:
   TF_VERSION: "1.9.5"
   # CI covers the platform stack only. The data_plane stack requires a one-time
   # manual Databricks account-admin grant, so it is applied manually (see README).
   WORKDIR: infra/terraform/platform
-  # Reuses the same AZURE_CREDENTIALS service-principal JSON as cd.yml.
-  ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
-  ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
-  ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
-  ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
-  TF_VAR_subscription_id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
-  TF_VAR_tenant_id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+  # Authenticates as the dmplt-devops SP via OIDC — no secret. The federated
+  # credentials (pull_request + main) live in the identities module; its standing
+  # permissions come from infra/terraform/platform/grant-ci-permissions.sh.
+  # These are identifiers, not secrets.
+  ARM_CLIENT_ID: d49bff07-6720-4b5e-b962-c16c8e327f43
+  ARM_TENANT_ID: 02589359-ab33-4ac8-a14d-396cc39943ae
+  ARM_SUBSCRIPTION_ID: ff0bf8b0-bff5-4b7e-a36e-d853ac35ec1a
+  ARM_USE_OIDC: "true"
+  TF_VAR_subscription_id: ff0bf8b0-bff5-4b7e-a36e-d853ac35ec1a
+  TF_VAR_tenant_id: 02589359-ab33-4ac8-a14d-396cc39943ae
 
 jobs:
   plan:
@@ -37,7 +42,9 @@ jobs:
 
       - uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ env.ARM_CLIENT_ID }}
+          tenant-id: ${{ env.ARM_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -72,7 +79,9 @@ jobs:
 
       - uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ env.ARM_CLIENT_ID }}
+          tenant-id: ${{ env.ARM_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
 
       - uses: hashicorp/setup-terraform@v3
         with:

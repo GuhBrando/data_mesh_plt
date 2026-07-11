@@ -1,14 +1,27 @@
 data "azuread_client_config" "current" {}
 
+# Owners are seeded at creation but reconciled OUT of Terraform: grant-ci-permissions.sh
+# adds dmplt-devops as owner of every app/SP here (including itself — a self-reference
+# HCL cannot express), and `current.object_id` differs between human and CI runs, so
+# managing the list here would strip one owner on every alternate apply.
+
 # --- dmplt-admin: governance (Databricks account/metastore admin, catalog owner) ---
 resource "azuread_application" "admin" {
   display_name = "dmplt-admin"
   owners       = [data.azuread_client_config.current.object_id]
+
+  lifecycle {
+    ignore_changes = [owners]
+  }
 }
 
 resource "azuread_service_principal" "admin" {
   client_id = azuread_application.admin.client_id
   owners    = [data.azuread_client_config.current.object_id]
+
+  lifecycle {
+    ignore_changes = [owners]
+  }
 }
 
 resource "azuread_application_password" "admin" {
@@ -20,11 +33,19 @@ resource "azuread_application_password" "admin" {
 resource "azuread_application" "devops" {
   display_name = "dmplt-devops"
   owners       = [data.azuread_client_config.current.object_id]
+
+  lifecycle {
+    ignore_changes = [owners]
+  }
 }
 
 resource "azuread_service_principal" "devops" {
   client_id = azuread_application.devops.client_id
   owners    = [data.azuread_client_config.current.object_id]
+
+  lifecycle {
+    ignore_changes = [owners]
+  }
 }
 
 # OIDC federated credential so GitHub Actions assumes dmplt-devops without a secret.

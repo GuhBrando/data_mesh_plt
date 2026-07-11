@@ -33,7 +33,7 @@ SP already admin, resource already imported), detect it and skip — never re-ru
 | 5 | `data_plane/` | (optional) read access for all users | — |
 
 All commands run from each stack's directory under `infra/terraform/`. PowerShell is
-primary (Windows). The two `grant-*.sh` scripts are **bash** — run them in Git Bash.
+primary (Windows). The three `grant-*.sh` scripts are **bash** — run them in Git Bash.
 
 ## Phase 0 — Prerequisites & inputs
 
@@ -64,6 +64,15 @@ the backend is ready — move on.
 Administrator**. Plain Contributor fails on `azurerm_role_assignment.*`. Confirm the
 logged-in identity has it before `apply`.
 
+The state backend authenticates via **Azure AD** (`use_azuread_auth`), so the
+operator needs `Storage Blob Data Contributor` on `dmplttfstate` — Owner alone is
+control-plane only and does NOT grant blob data access. **Run in Git Bash** (idempotent;
+before dmplt-devops exists it grants only the operator and tells you to re-run later):
+```bash
+cd ../platform
+bash grant-ci-permissions.sh
+```
+
 ```powershell
 cd ../platform
 Copy-Item terraform.tfvars.example terraform.tfvars   # set subscription_id, tenant_id, github_repo, location
@@ -87,6 +96,15 @@ terraform apply
 ```
 New resources (not imported): `dmpltsta`, the Databricks workspace, the access
 connector, the UC storage role assignment.
+
+**After apply — enable CI (one-time).** GitHub Actions (`infra.yml`) runs the platform
+stack as the `dmplt-devops` SP via OIDC (no secret). Its standing permissions —
+tfstate blob access, the Graph `Application.ReadWrite.OwnedBy` role, and ownership of
+the dmplt-admin/dmplt-devops apps (self-ownership is inexpressible in HCL) — come from
+the same script. **Re-run it in Git Bash** now that `dmplt-devops` exists:
+```bash
+bash grant-ci-permissions.sh
+```
 
 ## Phase 3 — Register admin SP + account admin ⛔
 
@@ -148,6 +166,8 @@ The bootstrap, import, and both grants are one-time. Ongoing changes are just
 | Symptom | Cause / fix |
 |---------|-------------|
 | `plan` wants to **destroy/replace** an imported resource | Import mismatch or missing LAW import. Stop, reconcile state before `apply`. |
+| `init` fails with 403 on blob/state access | Identity lacks `Storage Blob Data Contributor` on `dmplttfstate` (backend uses Azure AD auth). Run `platform/grant-ci-permissions.sh`. |
+| CI plan: `Authorization_RequestDenied` on `azuread_application.*` | `dmplt-devops` lacks Graph role/ownership — `grant-ci-permissions.sh` wasn't (re-)run after the platform apply. |
 | `AuthorizationFailed` on `azurerm_role_assignment` | Identity lacks Owner/UAA (Phase 2 gate). Re-run with a privileged identity. |
 | `grant-account-admin.sh`: "SP is not registered in the account" | Phase 3 `terraform apply` (databricks_bootstrap) didn't run first. |
 | data_plane provider auth fails | `dmplt-admin` isn't account admin yet (Phase 3 grant) — complete it first. |
